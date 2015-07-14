@@ -21,7 +21,7 @@ var emulator = new NesNes( canvas );
 emulator.load( pathToRom, callback );
 ```
 
-The parameters can be described as such:
+These are the parameters being used:
    * ``canvas``: a &lt;canvas&gt; DOM object to which the video output will be rendered. Not required (though nothing will be rendered if no canvas is given).
    * ``pathToRom``: the path to an INES rom file (most ROMs found on the internet are in this format)
    * ``callback``: function to be executed once the ROM has been loaded and initialized. If ``true`` true is passed instead of a function the ROM will automatically start playing once it has been loaded.
