@@ -8,6 +8,10 @@
     "nes",
     "emulator"
   ],
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/koenkivits/nesnes.git"
+  },
   "browser": {
     "utils": "./browser/utils.js"
   },
