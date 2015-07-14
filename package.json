@@ -1,7 +1,7 @@
 {
   "name": "nesnes",
   "version": "0.1.0",
-  "description": "New EcmaScript NES",
+  "description": "New EcmaScript NES emulator",
   "main": "main.js",
   "keywords": [
     "nesnes",
