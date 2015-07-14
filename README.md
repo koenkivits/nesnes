@@ -22,20 +22,20 @@ emulator.load( pathToRom, callback );
 ```
 
 The parameters can be described as such:
-   * ``canvas``: a &lt;canvas&gt; DOM object to which the video output will be rendered
+   * ``canvas``: a &lt;canvas&gt; DOM object to which the video output will be rendered. Not required (though nothing will be rendered if no canvas is given).
    * ``pathToRom``: the path to an INES rom file (most ROMs found on the internet are in this format)
-   * ``callback``: function to be executed once the ROM has been loaded and initialized. If ``true`` true is passed the ROM will automatically start playing
+   * ``callback``: function to be executed once the ROM has been loaded and initialized. If ``true`` true is passed instead of a function the ROM will automatically start playing once it has been loaded.
 
 ## Build standalone
 
-If you don't use Browserify or Node, you can build a standalone version for browsers:
+If you don't want to use with Browserify or Node, you can build a standalone version for browsers:
 
 ```
 npm install
 make
 ```
 
-This will create ``nesnes.js`` in ``dist/``, which exposes a global NesNes object when included in your page.
+This will create ``nesnes.js`` in ``dist/``, which exposes a global NesNes object when included in your web page. Note that this file also comes packaged with the npm module.
 
 ## Configuration
 
@@ -50,3 +50,7 @@ make test
 ```
 
 This starts an HTTP server at localhost, usually at port 8080 (the script tells you which port it uses). Visit http://localhost:PORT in your browser to be able to run several test ROMs with NESNES.
+
+## My game doesn't work!
+
+Please file an issue or send a pull request. :)
