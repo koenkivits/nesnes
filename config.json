@@ -1,0 +1,18 @@
+{
+	"input": [
+		{
+			"type": "standard",
+			"input": "keyboard",
+			"config": {
+				"x": "a",
+				"z": "b",
+				"shift": "select",
+				"return": "start",
+				"up": "up",
+				"down": "down",
+				"left": "left",
+				"right": "right"
+			}
+		}
+	]
+}

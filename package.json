@@ -1,0 +1,23 @@
+{
+  "name": "nesnes",
+  "version": "0.1.0",
+  "description": "New EcmaScript NES",
+  "main": "main.js",
+  "keywords": [
+    "nesnes",
+    "nes",
+    "emulator"
+  ],
+  "browser": {
+    "utils": "./browser/utils.js"
+  },
+  "author": "Koen Kivits <koen@kivits.com> (http://koen.kivits.com/)",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^0.8.0",
+    "jshint": "^2.8.0"
+  },
+  "dependencies": {
+    "browserify": "^10.2.4"
+  }
+}
