@@ -219,8 +219,7 @@ APU.prototype = {
 	 * Update output sample.
 	 */
 	updateSample: function() {
-		var tnd = 0,
-			tndOut = 0, // triangle, noise, dmc
+		var tndOut = 0, // triangle, noise, dmc
 			pulseOut = 0;
 
 		this.pulse1.doTimer();
@@ -229,27 +228,33 @@ APU.prototype = {
 		this.noise.doTimer();
 		this.dmc.doTimer();
 
-		if ( !this.output.enabled ) {
+		if ( this.output.enabled ) {
 			// no need to do calculations if output is disabled
-			return;
-		}
+			if ( this.sampleCounter >= this.sampleCounterMax ) {
+				pulseOut =  pulseTable[ this.pulse1.sample + this.pulse2.sample ];
+				tndOut = tndTable[ 3 * this.triangle.sample + 2 * this.noise.sample + this.dmc.sample ];
 
-		if ( this.sampleCounter >= this.sampleCounterMax ) {
-			pulseOut =  95.88 / ( (8128 / (this.pulse1.sample + this.pulse2.sample)) + 100 );
-			tndOut = 0;
+				this.output.writeSample( pulseOut + tndOut );
 
-			if ( this.triangle.sample || this.noise.sample || this.dmc.sample ) {
-				tnd = ( this.triangle.sample / 8227 ) + ( this.noise.sample / 12241 ) + (this.dmc.sample / 22638);
-				tndOut = 159.79 / ( ( 1 / tnd ) + 100 );
+				this.sampleCounter -= this.sampleCounterMax;
 			}
 
-			this.output.writeSample( pulseOut + tndOut );
-
-			this.sampleCounter -= this.sampleCounterMax;
+			this.sampleCounter += 1;
 		}
-
-		this.sampleCounter += 1;
 	}
 };
+
+/**
+ * Calculate lookup tables for audio samples.
+ */
+var i = 0;
+var pulseTable = new Float32Array( 31 );
+for ( i = 0; i < 31; i++ ) {
+	pulseTable[ i ] = 95.52 / ( 8128.0 / i + 100 );
+}
+var tndTable = new Float32Array( 203 );
+for ( i = 0; i < 203; i++ ) {
+	tndTable[ i ] = 163.67 / (24329.0 / i + 100);
+}
 
 module.exports = APU;
