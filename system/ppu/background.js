@@ -79,26 +79,36 @@ Background.prototype = {
 		this.initLineCycle();
 
 		if ( this.fetchingTiles ) {
-			this.fetchTileData();
+			this.setColor();
+
+			if ( this.ppu.enabled ) {
+				this.fetchTileData();
+			}
 		}
 
-		if ( this.ppu.enabled ) {
+		if ( this.ppu.lineCycle > 255 ) {
 			switch( this.ppu.lineCycle ) {
 			case 256:
-				// increment coarse X position every 8th cycle
-				this.incrementVY();
+				if ( this.ppu.enabled ) {
+					// increment coarse X position every 8th cycle
+					this.incrementVY();
+				}
 				break;
 			case 257:
-				// reset horizontal at end of scanline
-				// copy horizontal bits from loopy_t to loopy_v
-				this.loopyV = ( this.loopyV & 0x7be0 ) | ( this.loopyT & 0x41f );
+				if ( this.ppu.enabled ) {
+					// reset horizontal at end of scanline
+					// copy horizontal bits from loopy_t to loopy_v
+					this.loopyV = ( this.loopyV & 0x7be0 ) | ( this.loopyT & 0x41f );
+				}
 				break;
 			}
 
 			// finish initialization of loopy_v from loopy_t at end of pre-render scanline
 			if ( this.copyingVertical ) {
-				// copy vertical bits from loopy_t to loopy_v
-				this.loopyV = ( this.loopyV & 0x41f ) | ( this.loopyT & 0x7be0 );
+				if ( this.ppu.enabled ) {
+					// copy vertical bits from loopy_t to loopy_v
+					this.loopyV = ( this.loopyV & 0x41f ) | ( this.loopyT & 0x7be0 );
+				}
 			}
 		}
 	},
