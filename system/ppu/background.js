@@ -104,32 +104,42 @@ Background.prototype = {
 	},
 
 	initLineCycle: function() {
-		switch( this.ppu.lineCycle ) {
-		case 1:
-			this.enabledPixel = this.enabledLeft && this.ppu.inLeft8px;
-			this.fetchingTiles = true;
-			break;
-		case 321:
-			this.x = -this.loopyX - 8;
-			this.fetchingTiles = true;
-			break;
-		case 9:
-			this.enabledPixel = this.ppu.enabled;
-			break;
-		case 257:
-		case 337:
-			this.fetchingTiles = false;
-			break;
-		case 281:
-			if ( this.ppu.scanline === -1 ) {
-				this.copyingVertical = true;
+		const lineCycle = this.ppu.lineCycle;
+
+		if ( lineCycle < 10 ) {
+			switch( lineCycle ) {
+			case 1:
+				this.enabledPixel = this.enabledLeft && this.ppu.inLeft8px;
+				this.fetchingTiles = true;
+				this.fetchingTilesPhase = 1;
+				break;
+			case 9:
+				this.enabledPixel = this.ppu.enabled;
+				break;
 			}
-			break;
-		case 304:
-			if ( this.ppu.scanline === -1 ) {
-				this.copyingVertical = false;
+		} else if ( lineCycle > 256 ) {
+			switch( lineCycle ) {
+			case 321:
+				this.x = -this.loopyX - 8;
+				this.fetchingTiles = true;
+				this.fetchingTilesPhase = 1;
+				break;
+			case 337:
+				/* falls through */
+			case 257:
+				this.fetchingTiles = false;
+				break;
+			case 281:
+				if ( this.ppu.scanline === -1 ) {
+					this.copyingVertical = true;
+				}
+				break;
+			case 304:
+				if ( this.ppu.scanline === -1 ) {
+					this.copyingVertical = false;
+				}
+				break;
 			}
-			break;
 		}
 	},
 
