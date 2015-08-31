@@ -214,7 +214,7 @@ Background.prototype = {
 	fetchTileData: function() {
 		if ( this.fetchingTilesPhase++ === 7 ) {
 			const nametableAddress = 0x2000 | (this.loopyV & 0x0fff),
-			      attrAddress = 0x23c0 | (this.loopyV & 0x0c00) | ((this.loopyV >> 4) & 0x38) | ((this.loopyV >> 2) & 0x07),
+			      attrAddress = attrAddressLookup[ this.loopyV ],
 			      nameTableByte = this.memory.read( nametableAddress ),
 			      attribute = this.memory.read( attrAddress ),
 		      
@@ -267,5 +267,11 @@ Background.prototype = {
 		this.loopyT = ( this.loopyT & NAMETABLE_RESET ) | ( index << 10 );
 	}
 };
+
+var i = 0;
+var attrAddressLookup = new Uint16Array( 0x8000 );
+for ( i = 0; i < 0x8000; i++ ) {
+	attrAddressLookup[ i ] = 0x23c0 | (i & 0x0c00) | ((i >> 4) & 0x38) | ((i >> 2) & 0x07);
+}
 
 module.exports = Background;
