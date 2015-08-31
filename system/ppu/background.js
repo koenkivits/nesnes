@@ -21,6 +21,7 @@ function Background( ppu ) {
 
 	this.copyingVertical = false;
 	this.fetchingTiles = false;
+	this.fetchingTilesPhase = 0;
 
 	this.x = 0;
 	this.scanlineColors = new Uint8Array( 0x200 );
@@ -191,9 +192,7 @@ Background.prototype = {
 	 * Fetch background tile data.
 	 */
 	fetchTileData: function() {
-		this.setColor();
-
-		if ( !(this.ppu.lineCycle & 7) && this.ppu.enabled ) {
+		if ( this.fetchingTilesPhase++ === 7 ) {
 			const nametableAddress = 0x2000 | (this.loopyV & 0x0fff),
 			      attrAddress = 0x23c0 | (this.loopyV & 0x0c00) | ((this.loopyV >> 4) & 0x38) | ((this.loopyV >> 2) & 0x07),
 			      nameTableByte = this.memory.read( nametableAddress ),
@@ -229,6 +228,8 @@ Background.prototype = {
 			this.tileMask = 0x80;
 
 			this.incrementVX();
+
+			this.fetchingTilesPhase = 0;
 		}
 	},
 
