@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>NESNES test server</title>
+		<script>{{=it.script}}</script>
+		<style>
+			canvas {
+				display: block;
+				margin: 3em;
+			}
+			.paused {
+				opacity: .5;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>NESNES test server</h1>
+		<canvas id="test" width="256" height="224"></canvas>
+
+		<select id="game">
+			<option value="">SELECT A GAME</option>
+			{{ for ( var mapperId in it.cartridges ) { }}
+				<optgroup label="MAPPER {{=mapperId}}">
+					{{~it.cartridges[mapperId] :rom}}
+						<option value="{{=rom}}" {{? rom === it.selectedRom }}selected{{?}}>
+							{{=rom}}
+						</option>
+					{{~}}
+				</optgroup>
+			{{ } }}
+		</select>
+
+		<script>
+			var rom = game.value;
+
+			if ( rom ) {
+				var emu = new NesNes( test );
+				emu.load( "{{=it.ROM_PATH}}" + rom, true );
+
+				test.onclick = function() {
+					emu.toggle();
+					test.classList.toggle( "paused", emu.paused );
+				};
+			}
+
+			game.onchange = function() {
+				window.location = "{{=it.GAME_PATH}}" + game.value;
+			};
+		</script
+	</body>
+</html>
