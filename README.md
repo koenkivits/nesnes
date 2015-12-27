@@ -24,11 +24,11 @@ emulator.load( pathToRom, callback );
 These are the parameters being used:
    * ``canvas``: a &lt;canvas&gt; DOM object to which the video output will be rendered. Not required (though nothing will be rendered if no canvas is given).
    * ``pathToRom``: the path to an INES rom file (most ROMs found on the internet are in this format)
-   * ``callback``: function to be executed once the ROM has been loaded and initialized. If ``true`` true is passed instead of a function the ROM will automatically start playing once it has been loaded.
+   * ``callback``: function to be executed once the ROM has been loaded and initialized. If ``true`` is passed instead of a function the ROM will automatically start playing once it has been loaded.
 
 ## Build standalone
 
-If you don't want to use with Browserify or Node, you can build a standalone version for browsers:
+If you're running NESNES in the browser and don't want to use Browserify for your page, you can build a standalone version:
 
 ```
 npm install
@@ -43,7 +43,11 @@ Configuration (currently only keyboard input) can be found in ``config.json``.
 
 ## Testing
 
-NESNES includes a basic test server. You can run it by executing ``bin/nesnes-server`` from a directory with NES ROMs in it. This starts up an HTTP server at localhost, serving only a simple page containing a NESNES instance and a ROM selection input to be able to test games. NESNES is recompiled on every page load to make it easy to see how your changes affect the emulator.
+NESNES includes a basic test server. You can run it by executing:
+
+```bin/nesnes-server```
+
+from a directory containing NES ROMs. This starts up an HTTP server at localhost, serving only a simple page containing a NESNES instance and a ROM selection input to be able to test games. NESNES is recompiled on every page load to make it easy to see how your changes affect the emulator.
 
 A lot of third party test ROMs are included in the ``test`` directory to debug specific parts of the emulator.
 
