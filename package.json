@@ -9,8 +9,8 @@
     "emulator"
   ],
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/koenkivits/nesnes.git"
+    "type": "git",
+    "url": "https://github.com/koenkivits/nesnes.git"
   },
   "browser": {
     "utils": "./browser/utils.js"
@@ -22,6 +22,7 @@
     "jshint": "^2.8.0"
   },
   "dependencies": {
-    "browserify": "^10.2.4"
+    "browserify": "^10.2.4",
+    "dot": "^1.0.3"
   }
 }
