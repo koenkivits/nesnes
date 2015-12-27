@@ -5,7 +5,7 @@ var Cartridge = require("./system/cartridge");
 var Controllers = require("./system/controllers");
 var Output = require("./system/output");
 var Memory = require("./system/memory");
-var utils = require("utils");
+var utils = require("./utils");
 var Input = require("./system/input");
 
 var config = require("./config.json");

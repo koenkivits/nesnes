@@ -7,7 +7,11 @@ function Input( system  ) {
 	this.inputHandlers = new Array( 2 );
 
 	this.initConfig();
-	this.enable();
+
+	// only enable input in browsers
+	if ( typeof window !== "undefined" ) {
+		this.enable();
+	}
 }
 
 Input.prototype = {

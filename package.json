@@ -16,7 +16,7 @@
     "prepublish": "make"
   },
   "browser": {
-    "utils": "./browser/utils.js"
+    "./utils.js": "./browser/utils.js"
   },
   "author": "Koen Kivits <koen@kivits.com> (http://koen.kivits.com/)",
   "license": "MIT",
