@@ -21,11 +21,10 @@
   "author": "Koen Kivits <koen@kivits.com> (http://koen.kivits.com/)",
   "license": "MIT",
   "devDependencies": {
-    "http-server": "^0.8.0",
+    "browserify": "^10.2.4",
     "jshint": "^2.8.0"
   },
   "dependencies": {
-    "browserify": "^10.2.4",
     "dot": "^1.0.3"
   }
 }

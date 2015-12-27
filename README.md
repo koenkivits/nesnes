@@ -43,13 +43,9 @@ Configuration (currently only keyboard input) can be found in ``config.json``.
 
 ## Testing
 
-NESNES can be tested as follows:
+NESNES includes a basic test server. You can run it by executing ``bin/nesnes-server`` from a directory with NES ROMs in it. This starts up an HTTP server at localhost, serving only a simple page containing a NESNES instance and a ROM selection input to be able to test games. NESNES is recompiled on every page load to make it easy to see how your changes affect the emulator.
 
-```
-make test
-```
-
-This starts an HTTP server at localhost, usually at port 8080 (the script tells you which port it uses). Visit http://localhost:PORT in your browser to be able to run several test ROMs with NESNES.
+A lot of third party test ROMs are included in the ``test`` directory to debug specific parts of the emulator.
 
 ## My game doesn't work!
 
