@@ -45,7 +45,9 @@ Configuration (currently only keyboard input) can be found in ``config.json``.
 
 NESNES includes a basic test server. You can run it by executing:
 
-```bin/nesnes-server```
+```
+bin/nesnes-server
+```
 
 from a directory containing NES ROMs. This starts up an HTTP server at localhost, serving only a simple page containing a NESNES instance and a ROM selection input to be able to test games. NESNES is recompiled on every page load to make it easy to see how your changes affect the emulator.
 
