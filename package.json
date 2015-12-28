@@ -22,9 +22,7 @@
   "license": "MIT",
   "devDependencies": {
     "browserify": "^10.2.4",
-    "jshint": "^2.8.0"
-  },
-  "dependencies": {
+    "jshint": "^2.8.0",
     "dot": "^1.0.3"
   }
 }

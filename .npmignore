@@ -1,3 +1,4 @@
 test
 palettes
-bin/pal2js.js
+bin
+server
