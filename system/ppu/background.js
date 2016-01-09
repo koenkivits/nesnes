@@ -2,7 +2,18 @@
 
 // bitmasks
 const NAMETABLE_BITMASK = 0xc00,
-      NAMETABLE_RESET = ~NAMETABLE_BITMASK;
+      NAMETABLE_RESET = ~NAMETABLE_BITMASK,
+
+      FETCH_TILE = new Uint8Array( 400 );
+
+var i;
+for ( i = 9; i < 258; i += 8 ) {
+	FETCH_TILE[ i ] |= 1;
+}
+for ( i = 329; i < 338; i += 8 ) {
+	FETCH_TILE[ i ] |= 1;
+}
+
 
 function Background( ppu ) {
 	this.ppu = ppu;
@@ -19,16 +30,9 @@ function Background( ppu ) {
 
 	this.baseTable = 0;
 
-	this.copyingVertical = false;
-	this.fetchingTiles = false;
-	this.fetchingTilesPhase = 0;
-
 	this.x = 0;
 	this.scanlineColors = new Uint8Array( 0x200 );
-	this.palette = 0;
-	this.tileLow = 0;
-	this.tileHigh = 0;
-	this.tileMask = 0;
+	this.scanlineReset = new Uint8Array( 0x200 );
 
 	Object.preventExtensions( this );
 }
@@ -76,91 +80,55 @@ Background.prototype = {
 	},
 
 	evaluate: function() {
-		this.initLineCycle();
+		const lineCycle = this.ppu.lineCycle;
 
-		if ( this.fetchingTiles ) {
-			this.setColor();
-
-			if ( this.ppu.enabled ) {
-				this.fetchTileData();
-			}
+		if ( FETCH_TILE[ lineCycle ] ) {
+			this.fetchTileData();
 		}
 
-		if ( this.ppu.lineCycle > 255 ) {
-			switch( this.ppu.lineCycle ) {
-			case 256:
-				if ( this.ppu.enabled ) {
-					// increment coarse X position every 8th cycle
-					this.incrementVY();
-				}
-				break;
-			case 257:
-				if ( this.ppu.enabled ) {
-					// reset horizontal at end of scanline
-					// copy horizontal bits from loopy_t to loopy_v
-					this.loopyV = ( this.loopyV & 0x7be0 ) | ( this.loopyT & 0x41f );
-				}
-				break;
-			}
+		switch( lineCycle ) {
+		case 256:
+			// increment coarse X position every 8th cycle
+			this.incrementVY();
 
-			// finish initialization of loopy_v from loopy_t at end of pre-render scanline
-			if ( this.copyingVertical ) {
-				if ( this.ppu.enabled ) {
-					// copy vertical bits from loopy_t to loopy_v
-					this.loopyV = ( this.loopyV & 0x41f ) | ( this.loopyT & 0x7be0 );
-				}
-			}
+			break;
+		case 257:
+			// reset horizontal at end of scanline
+			// copy horizontal bits from loopy_t to loopy_v
+			this.loopyV = ( this.loopyV & 0x7be0 ) | ( this.loopyT & 0x41f );
+
+			this.scanlineColors.set( this.scanlineReset );
+			this.x = -this.loopyX;
+
+			break;
+		}
+
+		// finish initialization of loopy_v from loopy_t at end of pre-render scanline
+		if ( 
+			this.ppu.scanline === -1 &&
+			lineCycle > 280 &&
+			lineCycle < 304
+		) {
+			// copy vertical bits from loopy_t to loopy_v
+			this.loopyV = ( this.loopyV & 0x41f ) | ( this.loopyT & 0x7be0 );
 		}
 	},
 
-	initLineCycle: function() {
-		const lineCycle = this.ppu.lineCycle;
+	initScanline: function() {
+		this.enabledPixel = this.enabledLeft && this.ppu.inLeft8px;
+	},
 
-		if ( lineCycle < 10 ) {
-			switch( lineCycle ) {
-			case 1:
-				this.enabledPixel = this.enabledLeft && this.ppu.inLeft8px;
-				this.fetchingTiles = true;
-				this.fetchingTilesPhase = 1;
-				break;
-			case 9:
-				this.enabledPixel = this.ppu.enabled;
-				break;
-			}
-		} else if ( lineCycle > 256 ) {
-			switch( lineCycle ) {
-			case 321:
-				this.x = -this.loopyX - 8;
-				this.fetchingTiles = true;
-				this.fetchingTilesPhase = 1;
-				break;
-			case 337:
-				/* falls through */
-			case 257:
-				this.fetchingTiles = false;
-				break;
-			case 281:
-				if ( this.ppu.scanline === -1 ) {
-					this.copyingVertical = true;
-				}
-				break;
-			case 304:
-				if ( this.ppu.scanline === -1 ) {
-					this.copyingVertical = false;
-				}
-				break;
-			}
-		}
+	init8Px: function() {
+		this.enabledPixel = this.ppu.enabled;
 	},
 
 	/**
 	 * Increment coarse X scroll in loopy_v.
 	 */
 	incrementVX: function() {
-		if ((this.loopyV & 0x1f) === 31) {
+		if ( ( this.loopyV & 0x1f ) === 31 ) {
 			// coarse X is maxed out, wrap around to next nametable
-			this.loopyV &= ( 0xffff & ~0x1f );
-			this.loopyV ^= 0x0400;
+			this.loopyV = ( this.loopyV & ( 0xffff & ~0x1f ) ) ^ 0x0400;
 		}
 		else {
 			// we can safely increment loopy_v (since X is in the lowest bits)
@@ -212,55 +180,60 @@ Background.prototype = {
 	 * Fetch background tile data.
 	 */
 	fetchTileData: function() {
-		if ( this.fetchingTilesPhase++ === 7 ) {
-			const nametableAddress = 0x2000 | (this.loopyV & 0x0fff),
-			      attrAddress = attrAddressLookup[ this.loopyV ],
-			      nameTableByte = this.memory.read( nametableAddress ),
-			      attribute = this.memory.read( attrAddress ),
-		      
-			      fineY = ( this.loopyV & 0x7000 ) >> 12,
-			      tileAddress = ( nameTableByte << 4 ) + this.baseTable + fineY,
+		const nametableAddress = 0x2000 | ( this.loopyV & 0x0fff ),
+		      attrAddress = attrAddressLookup[ this.loopyV ],
+		      nameTableByte = this.memory.read( nametableAddress ),
+		      attribute = this.memory.read( attrAddress ),
+	      
+		      fineY = ( this.loopyV & 0x7000 ) >> 12,
+		      tileAddress = ( nameTableByte << 4 ) + this.baseTable + fineY,
 
-			      bitmapLow = this.memory.read( tileAddress ),
-			      bitmapHigh = this.memory.read( tileAddress + 8 );
+		      bitmapLow = this.memory.read( tileAddress ),
+		      bitmapHigh = this.memory.read( tileAddress + 8 );
 
-			var paletteMask = 3, // top left
-			    paletteShift = 0,
-			    palette = 0;
+		var paletteMask = 3, // top left
+		    paletteShift = 0,
+		    palette = 0;
 
-			if ( nametableAddress & 0x2 ) {
-				// right
-				paletteMask <<= 2;
-				paletteShift = 2;
-			}
-			if ( nametableAddress & 0x40 ) {
-				// bottom
-				paletteMask <<= 4;
-				paletteShift += 4;
-			}
-
-			palette = ( attribute & paletteMask ) >> paletteShift;
-
-			// this.preloadTile( bitmapLow, bitmapHigh, palette );
-			this.palette = palette << 2;
-			this.tileLow = bitmapLow;
-			this.tileHigh = bitmapHigh;
-			this.tileMask = 0x80;
-
-			this.incrementVX();
-
-			this.fetchingTilesPhase = 0;
+		if ( nametableAddress & 0x2 ) {
+			// right
+			paletteMask <<= 2;
+			paletteShift = 2;
 		}
+		if ( nametableAddress & 0x40 ) {
+			// bottom
+			paletteMask <<= 4;
+			paletteShift += 4;
+		}
+
+		palette = ( attribute & paletteMask ) >> paletteShift;
+
+		if ( bitmapLow | bitmapHigh ) {
+			this.drawTile( bitmapLow, bitmapHigh, palette << 2 );
+		}
+
+		this.x += 8;
+
+		this.incrementVX();
 	},
 
-	setColor: function() {
-		const low = !!( this.tileLow & this.tileMask ),
-		      high = !!( this.tileHigh & this.tileMask ) << 1,
-		      color = ( high | low );
+	drawTile: function( bitmapLow, bitmapHigh, palette ) {
+		var colorLow, colorHigh, color,
+			end = this.x + 8,
+			tileMask = 0x80;
 
-		this.scanlineColors[ this.x++ & 0x1ff ] = color && ( this.palette | color );
+		for ( ; this.x < end; end-- ) {
+			colorLow = ( bitmapLow & 1 );
+		    colorHigh = ( bitmapHigh & 1 ) << 1;
+		    color = ( colorHigh | colorLow );
 
-		this.tileMask >>= 1;
+		    if ( color ) {
+		    	this.scanlineColors[ end ] = palette | color;
+		    }
+
+		    bitmapLow >>= 1;
+		    bitmapHigh >>= 1;
+		}
 	},
 
 	setNameTable: function( index ) {

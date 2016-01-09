@@ -164,48 +164,34 @@ PPU.prototype = {
 	 */
 	tick: function() {	
 		if ( this.inRenderScanline ) {
-			this.background.evaluate();
-			this.sprites.evaluate();
+			if ( this.enabled ) {
+				this.background.evaluate();
+				this.sprites.evaluate();
+			}
 
 			if ( this.pixelInRange ) {
 				this.drawPixel();
 			}
-		}
 
-		this.incrementLineCycle();
+			this.incrementRenderCycle();
+		} else {
+			this.incrementIdleCycle();
+		}
 	},
 
-	incrementLineCycle: function() {
-		this.lineCycle++;
-
-		switch( this.lineCycle ) {
+	incrementRenderCycle: function() {
+		switch( ++this.lineCycle ) {
 		case 1:
 			this.pixelInRange = this.yInRange;
 			this.inLeft8px = true;
 
-			switch ( this.scanline ) {
-			case -1:
-				this.vBlank = this.nmiOccurred = false;
-				this.checkNMI = false;
-				this.sprites.spriteOverflow = false;
-				this.sprite0Hit = false;
-				break;
-			case 241:
-				if ( !this.warmup ) {
-					this.vBlank = this.nmiOccurred = this.checkNMI = true;
-
-					if ( this.generateNMI ) {
-						this.system.cpu.requestNMI();
-					}
-				} else {
-					this.warmup--;
-				}
-				break;
-			}
+			this.background.initScanline();
 
 			break;
 		case 9:
 			this.inLeft8px = false;
+			this.background.init8Px();
+
 			break;
 		case 257:
 			this.pixelInRange = false;
@@ -213,6 +199,34 @@ PPU.prototype = {
 		case 341:
 			this.incrementScanline();
 			break;
+		}
+	},
+
+	incrementIdleCycle: function() {
+		if ( ++this.lineCycle === 341 ) {
+			this.scanline++;
+			this.lineCycle = 0;
+
+			switch ( this.scanline ) {
+			case 241:
+				this.vBlank = this.nmiOccurred = this.checkNMI = true;
+
+				if ( this.generateNMI ) {
+					this.system.cpu.requestNMI();
+				}
+				break;
+			case 261:
+				this.scanline = -1;
+				this.system.frameEnded = true;
+				this.inRenderScanline = true;
+
+				this.vBlank = this.nmiOccurred = false;
+				this.checkNMI = false;
+				this.sprites.spriteOverflow = false;
+				this.sprite0Hit = false;
+
+				break;
+			}
 		}
 	},
 
@@ -226,21 +240,14 @@ PPU.prototype = {
 			this.yInRange = true;
 
 			// at scanline === 8 because of overscan
-
 			break;
 		case 233:
 			this.yInRange = false;
 
 			// at scanline === 233 because of overscan
-
 			break;
 		case 240:
 			this.inRenderScanline = false;
-			break;
-		case 261:
-			this.scanline = -1;
-			this.system.frameEnded = true;
-			this.inRenderScanline = true;
 			break;
 		}
 	},
