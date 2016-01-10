@@ -24,10 +24,10 @@ VideoOutput.prototype = {
 		    myData = this.data;
 
 		requestAnimationFrame(function flush() {
+			requestAnimationFrame( flush );
+
 			imageData.set( myData );
 			context.putImageData( image, 0, 0 );
-
-			requestAnimationFrame( flush );
 		});
 	},
 
@@ -62,11 +62,10 @@ VideoOutput.prototype = {
 	 * @see initPalette
 	 */
 	outputPixel: function( color ) {
-		this.data[ this.index ] = this.reds[ color ];
-		this.data[ this.index + 1] = this.greens[ color ];
-		this.data[ this.index + 2] = this.blues[ color ];
-
-		this.index += 4;
+		this.data[ this.index++ ] = this.reds[ color ];
+		this.data[ this.index++ ] = this.greens[ color ];
+		this.data[ this.index++ ] = this.blues[ color ];
+		this.index++ ;
 	},
 
 	/**
@@ -74,7 +73,7 @@ VideoOutput.prototype = {
 	 */
 	initData: function() {
 		this.width = 256;
-		this.height = 224;
+		this.height = 240;
 		this.data = new Uint8Array( this.width * this.height * 4 );
 
 		for ( var i = 0; i < this.data.length; i++  ) {

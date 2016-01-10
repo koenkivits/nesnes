@@ -192,6 +192,15 @@ Cartridge.prototype = {
 		return value;
 	},
 
+	readTile: function( baseTable, tileIndex, y ) {
+		const tileAddress = ( tileIndex << 4 ) + baseTable + y;
+
+		return (
+			( this.readCHR( tileAddress ) << 8 ) |
+			this.readCHR( tileAddress + 8 )
+		);
+	},
+
 	/**
 	 * Load a CHR Bank at a specific addres.
 	 * @param {number} address - The absolute address to load bank at (eg. 0x8000).

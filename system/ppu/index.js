@@ -9,6 +9,7 @@ function PPU( system ) {
 	this.ram = new Uint8Array( 0x0800 );
 
 	this.enabled = true;
+	this.frameEnded = false;
 
 	this.vBlank = false;
 	this.warmup = 2;
@@ -30,9 +31,10 @@ function PPU( system ) {
 	this.pixelInRange = false;
 	this.yInRange = false;
 	this.inRenderScanline = true;
-	this.inLeft8px = false;
+	//this.inLeft8px = false;
 
 	this.readBuffer = 0;
+	this.countdown = 0;
 
 	this.memory = new Memory( this );
 	this.background = new Background( this );
@@ -182,19 +184,23 @@ PPU.prototype = {
 	incrementRenderCycle: function() {
 		switch( ++this.lineCycle ) {
 		case 1:
-			this.pixelInRange = this.yInRange;
-			this.inLeft8px = true;
-
 			this.background.initScanline();
+			this.sprites.initScanline();
+			this.pixelInRange = this.yInRange;
 
 			break;
 		case 9:
-			this.inLeft8px = false;
 			this.background.init8Px();
+			this.sprites.init8Px();
 
 			break;
 		case 257:
 			this.pixelInRange = false;
+
+			if ( this.enabled ) {
+				this.background.endScanline();
+				this.sprites.endScanline();
+			}
 			break;
 		case 341:
 			this.incrementScanline();
@@ -203,30 +209,15 @@ PPU.prototype = {
 	},
 
 	incrementIdleCycle: function() {
-		if ( ++this.lineCycle === 341 ) {
-			this.scanline++;
-			this.lineCycle = 0;
+		if ( !(this.countdown--) ) {
+			this.scanline = -1;
+			this.frameEnded = true;
+			this.inRenderScanline = true;
 
-			switch ( this.scanline ) {
-			case 241:
-				this.vBlank = this.nmiOccurred = this.checkNMI = true;
-
-				if ( this.generateNMI ) {
-					this.system.cpu.requestNMI();
-				}
-				break;
-			case 261:
-				this.scanline = -1;
-				this.system.frameEnded = true;
-				this.inRenderScanline = true;
-
-				this.vBlank = this.nmiOccurred = false;
-				this.checkNMI = false;
-				this.sprites.spriteOverflow = false;
-				this.sprite0Hit = false;
-
-				break;
-			}
+			this.vBlank = this.nmiOccurred = false;
+			this.checkNMI = false;
+			this.sprites.spriteOverflow = false;
+			this.sprite0Hit = false;
 		}
 	},
 
@@ -248,6 +239,15 @@ PPU.prototype = {
 			break;
 		case 240:
 			this.inRenderScanline = false;
+
+			this.vBlank = this.nmiOccurred = this.checkNMI = true;
+
+			if ( this.generateNMI ) {
+				this.system.cpu.requestNMI();
+			}
+
+			this.countdown = 6800;
+
 			break;
 		}
 	},

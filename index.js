@@ -88,20 +88,24 @@ System.prototype = {
 	 * Run a single frame (1/60s NTCS, 1/50s PAL).
 	 */
 	runFrame: function() {
-		while ( !this.frameEnded ) {
-			this.cpu.tick();
+		const cpu = this.cpu,
+		      ppu = this.ppu,
+		      apu = this.apu;
 
-			this.ppu.tick();
-			this.ppu.tick();
-			this.ppu.tick();
+		while ( !ppu.frameEnded ) {
+			cpu.tick();
+
+			ppu.tick();
+			ppu.tick();
+			ppu.tick();
 
 			if ( this.tickAPU ) {
-				this.apu.tick();
+				apu.tick();
 			}
 			this.tickAPU = !this.tickAPU;
 		}
 
-		this.frameEnded = false;
+		ppu.frameEnded = false;
 	},
 
 	/**
@@ -152,10 +156,16 @@ System.prototype = {
 	 * Initialize cartridge and hook into system.
 	 */
 	initCartridge: function( data ) {
-		var cartridge = new Cartridge( data, this );
-		this.cartridge = cartridge;
+		this.cartridge = new Cartridge( data, this );
+	
 		this.initCore();
 		this.reset();
+	},
+
+	loadCartridge: function( cartridge ) {
+		//this.cartridge = cartridge;
+		this.memory.loadCartridge( cartridge );
+		this.ppu.memory.loadCartridge( cartridge );
 	},
 
 	/**
@@ -166,6 +176,8 @@ System.prototype = {
 		this.apu = new APU( this );
 		this.ppu = new PPU( this );
 		this.memory = new Memory( this );
+
+		this.loadCartridge( this.cartridge );
 	},
 
 	/**

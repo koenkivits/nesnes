@@ -14,25 +14,22 @@ function Memory( system ) {
 
 	this.address = 0;
 
+	this.cartridge = null;
+
 	Object.preventExtensions( this );
 }
 
 Memory.prototype = {
+	loadCartridge: function( cartridge ) {
+		this.cartridge = cartridge;
+	},
+
 	readWrite: function( address, write, value ) {
 		this.address = address; // TODO, do I use this anywhere?
-
-		/*if ( address >= 0x2000 && address < 0x4020 ) {
-			if ( write ) {
-				console.log( address.toString(16), value.toString(16), value.toString(2) );
-			} else {
-				console.log( address.toString(16) );
-			}
-		}*/
 
 		switch ( address ) {
 		case 0x4014:
 			// OAM DMA, write-only
-			//console.log("DMA", value.toString(16));
 			if ( write ) {
 				var i, base = value << 8;
 

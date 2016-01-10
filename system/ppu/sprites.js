@@ -1,6 +1,8 @@
 "use strict";
 
-var bitwise = require("../utils/bitwise");
+var bitmap = require("../utils/bitmap");
+
+const tileCycles = initTileCycles(); 
 
 function Sprites( ppu ) {
 	this.ppu = ppu;
@@ -8,6 +10,7 @@ function Sprites( ppu ) {
 
 	this.enabled = true;
 	this.enabledLeft = true;
+	this.enabledPixel = false;
 
 	// OAM
 	this.oamAddress = 0;
@@ -24,11 +27,6 @@ function Sprites( ppu ) {
 	this.spriteSize = 8;
 	this.baseTable = 0;
 
-	this.clearProgress = 0;
-	this.n = 0;
-	this.m = 0;
-	this.oam2Index = 0;
-	this.oamInitDone = 0;
 	this.sprite0Next = false;
 	this.sprite0InRange = false;
 	this.spriteOverflow = false;
@@ -38,7 +36,6 @@ function Sprites( ppu ) {
 
 	this.yCounters = new Uint8Array( 0x40 );
 	this.yCountersReset = new Uint8Array( this.yCounters.length );
-	this.oddPixel = true;
 
 	this.nextScanlineSprite0 = new Uint8Array( 0x100 );
 	this.nextScanlinePriority = new Uint8Array( 0x100 );
@@ -63,43 +60,43 @@ Sprites.prototype = {
 	},
 
 	evaluate: function() {
-		var lineCycle = this.ppu.lineCycle;
-
-		if ( lineCycle === 0 ) {
-			// this also (just like bg) seems to be an idle cycle
-			this.n = 0;
-			this.m = 0;
-			this.oamInitDone = 0;
-			this.currentSprite = 0;
-			this.oam2Index = 0;
-			this.sprite0InRange = this.sprite0Next;
-			this.sprite0Next = false;
-			this.scanlineOverflow = false;
-			this.oddPixel = true;
-
-			this.oamAddress = 0;
-
-			this.clearSecondaryOAM();
-
-			this.scanlineSprite0.set( this.nextScanlineSprite0 );
-			this.scanlinePriority.set( this.nextScanlinePriority );
-			this.scanlineColors.set( this.nextScanlineColors );
-
-			if ( this.nextSpriteCount ) {
-				this.nextScanlineSprite0.set( this.scanlineReset );
-				this.nextScanlinePriority.set( this.scanlineReset );
-				this.nextScanlineColors.set( this.scanlineReset );
-			}
-
-			this.spriteCount = this.nextSpriteCount;
-			this.nextSpriteCount = 0;
-		} else if ( lineCycle <= 64 ) {
-			// do nothing
-		} else if ( lineCycle <= 256 ) {
-			this.initSecondaryOAM();
-		} else if ( lineCycle <= 320 ) {
-			this.fetchSprites();
+		if ( tileCycles[ this.ppu.lineCycle ] ) {
+			this.fetchTile();
 		}
+	},
+
+	initScanline: function() {
+		this.currentSprite = 0;
+		this.sprite0InRange = this.sprite0Next;
+		this.sprite0Next = false;
+		this.scanlineOverflow = false;
+
+		this.oamAddress = 0;
+
+		this.clearSecondaryOAM();
+
+		this.scanlineSprite0.set( this.nextScanlineSprite0 );
+		this.scanlinePriority.set( this.nextScanlinePriority );
+		this.scanlineColors.set( this.nextScanlineColors );
+
+		if ( this.nextSpriteCount ) {
+			this.nextScanlineSprite0.set( this.scanlineReset );
+			this.nextScanlinePriority.set( this.scanlineReset );
+			this.nextScanlineColors.set( this.scanlineReset );
+		}
+
+		this.spriteCount = this.nextSpriteCount;
+		this.nextSpriteCount = 0;
+
+		this.enabledPixel = this.enabledLeft;
+	},
+
+	endScanline: function() {
+		this.initSecondaryOAM();
+	},
+
+	init8Px: function() {
+		this.enabledPixel = this.enabled;
 	},
 
 	readOAM: function() {
@@ -135,137 +132,123 @@ Sprites.prototype = {
 	 * Initialize secondary OAM ('sprite evaluation').
 	 */
 	initSecondaryOAM: function() {
-		if ( !this.ppu.enabled  ) {
+		const ppu = this.ppu;
+
+		if ( !ppu.enabled  ) {
 			return;
 		}
 
-		if ( this.n === 64 ) {
-			this.oam2[ this.oam2Index ] = 0;
+		var value,
+			oam2Index = 0,
+			index = this.oamAddress;
 
-			return;
-		}
-
-		var index = this.oamAddress,
+		for ( var n = 0; n < 64; n++ ) {
 			value = this.oam[ index ];
 
-		this.oam2[ this.oam2Index ] = value;
+			this.oam2[ oam2Index ] = value;
 
-		if ( this.ppu.scanline === value ) {
-			this.yCounters[ this.n ] = this.spriteSize;
-		}
-
-		if ( this.yCounters[ this.n ] ) {
-			// sprite is in range
-
-			if ( !this.scanlineOverflow ) {
-				// there's still space left in secondary OAM
-				this.oam2.set( this.oam.subarray(index, index + 4), this.oam2Index );
-
-				if ( this.n === 0 ) {
-					this.sprite0Next = true;
-				}
-
-				this.nextSpriteCount++;
-				this.oam2Index += 4;
-
-				if ( this.oam2Index === 32 ) {
-					this.scanlineOverflow = true;
-				}
-			} else {
-				// secondary OAM is full but sprite is in range. Trigger sprite overflow
-				this.spriteOverflow = true;
-
-				// TODO buggy 'm' overflow behavior
+			if ( ppu.scanline === value ) {
+				this.yCounters[ n ] = this.spriteSize;
 			}
 
-			this.yCounters[ this.n ]--;
+			if ( this.yCounters[ n ] ) {
+				// sprite is in range
+
+				if ( !this.scanlineOverflow ) {
+					// there's still space left in secondary OAM
+					this.oam2.set( this.oam.subarray(index, index + 4), oam2Index );
+
+					if ( n === 0 ) {
+						this.sprite0Next = true;
+					}
+
+					this.nextSpriteCount++;
+					oam2Index += 4;
+
+					if ( oam2Index === 32 ) {
+						this.scanlineOverflow = true;
+					}
+				} else {
+					// secondary OAM is full but sprite is in range. Trigger sprite overflow
+					this.spriteOverflow = true;
+
+					// TODO buggy 'm' overflow behavior
+				}
+
+				this.yCounters[ n ]--;
+			}
+
+			index += 4;
 		}
 
-		this.oamAddress += 4;
-		this.n++;
+		this.oamAddress = index;
+		this.oam2[ oam2Index ] = 0;
 	},
 
 	/**
 	 * Fetch sprite data and feed appropriate shifters, counters and latches.
 	 */
-	fetchSprites: function() {
-		if ( this.ppu.enabled && this.spriteProgress === 7 ) {
-			var spriteIndex = this.currentSprite << 2,
-				y = this.oam2[ spriteIndex ],
-				tileIndex = this.oam2[ spriteIndex + 1 ],
-				attributes = this.oam2[ spriteIndex + 2 ],
-				x = this.oam2[ spriteIndex + 3 ],
-				baseTable = this.baseTable,
-				tileAddress = 0,
-				tileLow = 0,
-				tileHigh = 0,
-				flipX = attributes & 0x40,
-				flipY = 0,
-				fineY = 0;
+	fetchTile: function() {
+		var spriteIndex = this.currentSprite << 2,
+			y = this.oam2[ spriteIndex ],
+			tileIndex = this.oam2[ spriteIndex + 1 ],
+			attributes = this.oam2[ spriteIndex + 2 ],
+			x = this.oam2[ spriteIndex + 3 ],
+			baseTable = this.baseTable,
+			tile = 0,
+			flipX = attributes & 0x40,
+			flipY = 0,
+			fineY = 0;
 
-			flipY = attributes & 0x80;
-			fineY = ( this.ppu.scanline - y ) & ( this.spriteSize - 1 );
-			// (the '& spriteSize' is needed because fineY can overflow due
-			// to uninitialized tiles in secondary OAM)
+		flipY = attributes & 0x80;
+		fineY = ( this.ppu.scanline - y ) & ( this.spriteSize - 1 );
+		// (the '& spriteSize' is needed because fineY can overflow due
+		// to uninitialized tiles in secondary OAM)
 
-			if ( this.spriteSize === 16 ) {
-				// big sprite, select proper nametable and handle flipping
-				baseTable = ( tileIndex & 1 ) ? 0x1000 : 0;
-				tileIndex = tileIndex & ~1;
+		if ( this.spriteSize === 16 ) {
+			// big sprite, select proper nametable and handle flipping
+			baseTable = ( tileIndex & 1 ) ? 0x1000 : 0;
+			tileIndex = tileIndex & ~1;
 
-				if ( fineY > 7 ) {
-					fineY -= 8;
-					if ( !flipY ) {
-						tileIndex++;
-					}
-				} else if ( flipY ) {
+			if ( fineY > 7 ) {
+				fineY -= 8;
+				if ( !flipY ) {
 					tileIndex++;
 				}
-			}
-
-			if ( flipY ) {
-				fineY = 8 - fineY - 1;
-			}
-
-			tileAddress = ( tileIndex << 4 ) + baseTable + fineY;
-
-			tileLow = this.memory.read( tileAddress );
-			tileHigh = this.memory.read( tileAddress + 8 );
-
-			if ( flipX ) {
-				tileLow = bitwise.reverse( tileLow );
-				tileHigh = bitwise.reverse( tileHigh );
-			}
-
-			if ( this.currentSprite < this.nextSpriteCount ) {
-				this.preloadSprite( x, tileLow, tileHigh, attributes );
+			} else if ( flipY ) {
+				tileIndex++;
 			}
 		}
 
-		this.spriteProgress += 1;
-		if ( this.spriteProgress === 8 ) {
-			this.spriteProgress = 0;
-			this.currentSprite += 1;
+		if ( flipY ) {
+			fineY = 8 - fineY - 1;
 		}
+
+		tile = this.memory.cartridge.readTile( baseTable, tileIndex, fineY );
+
+		if ( flipX ) {
+			tile = bitmap.reverseTile( tile );
+		}
+
+		if ( this.currentSprite < this.nextSpriteCount ) {
+			this.renderTile( x, tile, attributes );
+		}
+
+		this.currentSprite += 1;
 	},
 
-	preloadSprite: function( x, tileLow, tileHigh, attributes ) {
-		var mask = 0x80,
-
+	renderTile: function( x, tile, attributes ) {
+		var colors = bitmap.getColors( tile ),
 			palette = 0x10 | ( (attributes & 3) << 2 ),
 			priority = attributes & 0x20,
 			sprite0 = ( this.currentSprite === 0 ) && this.sprite0Next,
 
-			low = 0,
-			high = 0,
 			color = 0,
-			i = 0;
+			i = 8;
 
-		for ( ; i < 8; i++ ) {
+		for ( ; i >= 0; i-- ) {
 			if ( !this.nextScanlineColors[ x ] ) {
-				low = !!( tileLow & mask );
-				high = !!( tileHigh & mask ) << 1;
-				color = ( high | low );
+				color = colors[ i ];
 
 				if ( color ) {
 					this.nextScanlineColors[ x ] = palette | color;
@@ -274,7 +257,6 @@ Sprites.prototype = {
 				}
 			}
 
-			mask >>= 1;
 			x++;
 		}
 	},
@@ -285,8 +267,7 @@ Sprites.prototype = {
 
 		if ( 
 			!color ||
-			!this.enabled ||
-			(!this.enabledLeft && this.ppu.inLeft8px) ||
+			!this.enabledPixel ||
 			this.ppu.lineCycle === 256
 		) {
 			return backgroundColor;
@@ -304,5 +285,16 @@ Sprites.prototype = {
 		return color;
 	}
 };
+
+function initTileCycles() {
+	var i,
+	    result = new Uint8Array( 0x200 );
+	
+	for ( i = 264; i <= 320; i += 8 ) {
+		result[ i ] = 1;
+	}
+
+	return result;
+}
 
 module.exports = Sprites;

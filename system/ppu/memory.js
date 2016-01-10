@@ -1,10 +1,19 @@
+"use strict";
+
 function Memory( ppu ) {
 	this.ppu = ppu;
 	this.system = ppu.system;
 	this.palette = new Uint8Array( 0x20 );
+	this.cartridge = null;
+
+	Object.preventExtensions( this );
 }
 
 Memory.prototype = {
+	loadCartridge: function( cartridge ) {
+		this.cartridge = cartridge;
+	},
+
 	read: function( address ) {
 		return this._readWrite( address, 0, 0 );
 	},
@@ -19,18 +28,18 @@ Memory.prototype = {
 
 		if ( !( address & ~0x1fff ) ) {
 			if ( write ) {
-				return this.system.cartridge.writeCHR( address, value );
+				return this.cartridge.writeCHR( address, value );
 			} else {
-				return this.system.cartridge.readCHR( address );
+				return this.cartridge.readCHR( address );
 			}
 		} else if ( !( address & ~0x2fff ) ) {
 			relativeAddress = address & 0x1fff;
 
 			if ( write ) {
-				this.system.cartridge.writeNameTable( relativeAddress, value );
+				this.cartridge.writeNameTable( relativeAddress, value );
 				return 0;
 			} else {
-				return this.system.cartridge.readNameTable( relativeAddress );
+				return this.cartridge.readNameTable( relativeAddress );
 			}
 		} else if ( address < 0x3f00 ) {
 			// mirror of 0x2000-0x2fff

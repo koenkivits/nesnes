@@ -1,19 +1,15 @@
 "use strict";
 
+var bitmap = require( "../utils/bitmap" );
+
 // bitmasks
 const NAMETABLE_BITMASK = 0xc00,
       NAMETABLE_RESET = ~NAMETABLE_BITMASK,
 
-      FETCH_TILE = new Uint8Array( 400 );
-
-var i;
-for ( i = 9; i < 258; i += 8 ) {
-	FETCH_TILE[ i ] |= 1;
-}
-for ( i = 329; i < 338; i += 8 ) {
-	FETCH_TILE[ i ] |= 1;
-}
-
+      attrAddresses = initAttrAddresses(),
+      tileCycles = initTileCycles(),
+      palettes = initPalettes(),
+      masks = initMasks();
 
 function Background( ppu ) {
 	this.ppu = ppu;
@@ -31,6 +27,8 @@ function Background( ppu ) {
 	this.baseTable = 0;
 
 	this.x = 0;
+	this.y = 0;
+
 	this.scanlineColors = new Uint8Array( 0x200 );
 	this.scanlineReset = new Uint8Array( 0x200 );
 
@@ -82,25 +80,8 @@ Background.prototype = {
 	evaluate: function() {
 		const lineCycle = this.ppu.lineCycle;
 
-		if ( FETCH_TILE[ lineCycle ] ) {
-			this.fetchTileData();
-		}
-
-		switch( lineCycle ) {
-		case 256:
-			// increment coarse X position every 8th cycle
-			this.incrementVY();
-
-			break;
-		case 257:
-			// reset horizontal at end of scanline
-			// copy horizontal bits from loopy_t to loopy_v
-			this.loopyV = ( this.loopyV & 0x7be0 ) | ( this.loopyT & 0x41f );
-
-			this.scanlineColors.set( this.scanlineReset );
-			this.x = -this.loopyX;
-
-			break;
+		if ( tileCycles[ lineCycle ] ) {
+			this.fetchTile();
 		}
 
 		// finish initialization of loopy_v from loopy_t at end of pre-render scanline
@@ -111,11 +92,25 @@ Background.prototype = {
 		) {
 			// copy vertical bits from loopy_t to loopy_v
 			this.loopyV = ( this.loopyV & 0x41f ) | ( this.loopyT & 0x7be0 );
+			//this.oddY = false;
 		}
 	},
 
 	initScanline: function() {
-		this.enabledPixel = this.enabledLeft && this.ppu.inLeft8px;
+		this.enabledPixel = this.enabledLeft;
+	},
+
+	endScanline: function() {
+		// increment coarse X position every 8th cycle
+		this.incrementVY();
+
+		// reset horizontal at end of scanline
+		// copy horizontal bits from loopy_t to loopy_v
+		// TODO: should actually happen on *next* cycle, is this OK?
+		this.loopyV = ( this.loopyV & 0x7be0 ) | ( this.loopyT & 0x41f );
+
+		this.scanlineColors.set( this.scanlineReset );
+		this.x = -this.loopyX;
 	},
 
 	init8Px: function() {
@@ -134,6 +129,8 @@ Background.prototype = {
 			// we can safely increment loopy_v (since X is in the lowest bits)
 			this.loopyV += 1;
 		}
+
+		this.x += 8;
 	},
 
 	/**
@@ -164,12 +161,18 @@ Background.prototype = {
 			// set coarse Y in loopy_v
 			this.loopyV = (this.loopyV & ~0x03e0) | (coarseY << 5);
 		}
+
+		this.y = ( this.loopyV & 0x7000 ) >> 12;
 	},
 
 	setPixel: function() {
-		var color = this.scanlineColors[ this.ppu.lineCycle - 1 ];
+		const lineCycle = this.ppu.lineCycle;
+		var color = this.scanlineColors[ lineCycle - 1 ];
 
-		if ( !this.enabledPixel ) {
+		if (
+			!this.enabledPixel ||
+			( !this.enabledLeft && lineCycle < 9 )
+		) {
 			color = 0;
 		}
 
@@ -179,60 +182,38 @@ Background.prototype = {
 	/**
 	 * Fetch background tile data.
 	 */
-	fetchTileData: function() {
-		const nametableAddress = 0x2000 | ( this.loopyV & 0x0fff ),
-		      attrAddress = attrAddressLookup[ this.loopyV ],
-		      nameTableByte = this.memory.read( nametableAddress ),
-		      attribute = this.memory.read( attrAddress ),
-	      
-		      fineY = ( this.loopyV & 0x7000 ) >> 12,
-		      tileAddress = ( nameTableByte << 4 ) + this.baseTable + fineY,
+	fetchTile: function() {
+		const cartridge = this.memory.cartridge,
 
-		      bitmapLow = this.memory.read( tileAddress ),
-		      bitmapHigh = this.memory.read( tileAddress + 8 );
+		      attrAddress = attrAddresses[ this.loopyV ],
+		      attribute = cartridge.readNameTable( attrAddress & 0x1fff ),
 
-		var paletteMask = 3, // top left
-		    paletteShift = 0,
-		    palette = 0;
+		      nametableAddress = 0x2000 | ( this.loopyV & 0x0fff ),
+		      tileIndex = cartridge.readNameTable( nametableAddress & 0x1fff ),
+	          tile = cartridge.readTile( this.baseTable, tileIndex, this.y );
 
-		if ( nametableAddress & 0x2 ) {
-			// right
-			paletteMask <<= 2;
-			paletteShift = 2;
+		if ( tile ) {
+			this.renderTile(
+				tile,
+				palettes[ attribute & masks[ this.loopyV & 0xfff ] ]
+			);
 		}
-		if ( nametableAddress & 0x40 ) {
-			// bottom
-			paletteMask <<= 4;
-			paletteShift += 4;
-		}
-
-		palette = ( attribute & paletteMask ) >> paletteShift;
-
-		if ( bitmapLow | bitmapHigh ) {
-			this.drawTile( bitmapLow, bitmapHigh, palette << 2 );
-		}
-
-		this.x += 8;
 
 		this.incrementVX();
 	},
 
-	drawTile: function( bitmapLow, bitmapHigh, palette ) {
-		var colorLow, colorHigh, color,
-			end = this.x + 8,
-			tileMask = 0x80;
+	renderTile: function( tile, palette ) {
+		const colors = bitmap.getColors( tile );
+		var color,
+		    i = 0,
+		    end = this.x + 8;
 
 		for ( ; this.x < end; end-- ) {
-			colorLow = ( bitmapLow & 1 );
-		    colorHigh = ( bitmapHigh & 1 ) << 1;
-		    color = ( colorHigh | colorLow );
+		    color = colors[ i++ ];
 
 		    if ( color ) {
 		    	this.scanlineColors[ end ] = palette | color;
 		    }
-
-		    bitmapLow >>= 1;
-		    bitmapHigh >>= 1;
 		}
 	},
 
@@ -241,10 +222,79 @@ Background.prototype = {
 	}
 };
 
-var i = 0;
-var attrAddressLookup = new Uint16Array( 0x8000 );
-for ( i = 0; i < 0x8000; i++ ) {
-	attrAddressLookup[ i ] = 0x23c0 | (i & 0x0c00) | ((i >> 4) & 0x38) | ((i >> 2) & 0x07);
+/**
+ * Initialize attribute address lookup table.
+ * Maps loopy_v values to attribute addresses.
+ */
+function initAttrAddresses() {
+	var i,
+	    result = new Uint16Array( 0x8000 );
+
+	for ( i = 0; i < 0x8000; i++ ) {
+		result[ i ] = 0x23c0 | (i & 0x0c00) | ((i >> 4) & 0x38) | ((i >> 2) & 0x07);
+	}
+
+	return result;
+}
+
+/**
+ * Inititialze mask lookup table.
+ * Maps loopy_v values to bitmasks for attribute bytes to get the correct palette value.
+ */
+function initMasks() {
+	var i, mask,
+	    result = new Uint8Array( 0x10000 );
+
+	for ( i = 0; i < 0x10000; i++ ) {
+		mask = 3;
+		if ( i & 0x2 ) {
+			// right
+			mask <<= 2;
+		}
+		if ( i & 0x40 ) {
+			// bottom
+			mask <<= 4;
+		}
+
+		result[ i ] = mask;
+	}
+
+	return result;
+}
+
+/**
+ * Initialize tile palette lookup table.
+ * Maps ( attribute byte & mask ) to palette value.
+ */
+function initPalettes() {
+	var i, j,
+	    result = new Uint8Array( 0x100 );
+
+	for ( i = 0; i < 4; i++ ) {
+		for ( j = 0; j < 8; j += 2 ) {
+			result[ i << j ] = i << 2; // shift by 2 places, so value can be easily ORed with color
+		}
+	}
+
+	return result;
+}
+
+/**
+ * Initialize tile fetch cycles.
+ * Returns a typed array containing a 1 at every cycle a background tile should be fetched.
+ */
+function initTileCycles() {
+	var i,
+	    result = new Uint8Array( 400 );
+
+	for ( i = 9; i < 258; i += 8 ) {
+		result[ i ] = 1;
+	}
+	for ( i = 329; i < 338; i += 8 ) {
+		result[ i ] = 1;
+	}
+
+	return result;
 }
 
 module.exports = Background;
