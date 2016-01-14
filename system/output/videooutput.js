@@ -1,4 +1,3 @@
-var palette = require("./palette");
 const WebGLRenderer = require( "./renderer/webgl" ),
       Canvas2DRenderer = require( "./renderer/canvas2d" );
 const glMode = true;

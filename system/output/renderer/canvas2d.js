@@ -1,4 +1,4 @@
-var palette = require("../palette").data;
+var palette = require("./palette").data;
 
 function Canvas2DRenderer( el ) {
 	this.el = el;

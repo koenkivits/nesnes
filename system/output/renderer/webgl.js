@@ -1,4 +1,4 @@
-var palette = require("../palette").data;
+var palette = require("./palette").data;
 
 function WebGLRenderer( el ) {
 	this.el = el;
