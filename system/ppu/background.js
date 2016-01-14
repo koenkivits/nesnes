@@ -79,8 +79,7 @@ Background.prototype = {
 
 	evaluate: function() {
 		const ppu = this.ppu,
-		      lineCycle = ppu.lineCycle,
-		      sprites = ppu.sprites;
+		      lineCycle = ppu.lineCycle;
 
 		if ( tileCycles[ lineCycle ] ) {
 			this.fetchTile();

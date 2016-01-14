@@ -1,6 +1,5 @@
 const WebGLRenderer = require( "./renderer/webgl" ),
       Canvas2DRenderer = require( "./renderer/canvas2d" );
-const glMode = true;
 
 function VideoOutput() {
 	const width = 256,
