@@ -209,7 +209,6 @@ PPU.prototype = {
 
 			if ( this.yInRange ) {
 				this.output.outputScanline(
-					this.scanline,
 					this.background.scanlineColors,
 					this.sprites.scanlineColors,
 					this.sprites.scanlinePriority
