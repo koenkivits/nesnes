@@ -1,7 +1,8 @@
 var palette = require("./palette");
-const glMode = false;
+const glMode = true;
 
 function VideoOutput() {
+	this.bgColor = 0;
 	if ( glMode ) {
 		this.initGL();
 	} else {
@@ -35,7 +36,14 @@ VideoOutput.prototype = {
 	 * Initialize canvas WebGL rendering.
 	 */
 	initGL: function() {
-		this.pixelBuffer = new Uint8Array( 256 * 224 );
+		const width = 256,
+		      height = 225,
+		      length = width * height;
+		      
+		this.pixelBuffer = new Uint8Array( length );
+		this.bgBuffer = new Uint8Array( length );
+		this.spriteBuffer = new Uint8Array( length );
+		this.prioBuffer = new Uint8Array( length );
 		this.index = 0;
 
 		this.initContext = this.initGLContext;
@@ -55,11 +63,14 @@ VideoOutput.prototype = {
 	 */
 	initGLContext: function() {
 		const gl = this.context = this.el.getContext( "webgl" )
-		gl.viewport( 0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight );
+		gl.viewport( 0, 0, 256, 224 );
 
 		this.initShaders();
+		this.initProgram();
 		this.initBuffers();
 		this.initTextures();
+
+		this.bgColorLocation = gl.getUniformLocation(this.program, "bgColor");
 	},
 
 	/**
@@ -90,34 +101,32 @@ VideoOutput.prototype = {
 	 * the system palette.
 	 */
 	initTextures: function() {
+		const gl = this.context,
+		      program = this.program;
 
-		// initialize pixel texture
-		const gl = this.context;
-		var texture = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, texture);
 
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-		gl.uniform1i(gl.getUniformLocation(this.program, "pixelTexture"), 0);
-
-		this.pixelTexture = texture;
+		// initialize pixel textures
+		this.bgTexture = createTexture( 0, "bgTexture" );
+		this.spriteTexture = createTexture( 1, "spriteTexture" );
+		this.prioTexture = createTexture( 2, "prioTexture" );
 
 		// initialize palette texture
-		texture = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-		gl.uniform1i(gl.getUniformLocation(this.program, "paletteTexture"), 1);
-
+		this.paletteTexture = createTexture( 3, "paletteTexture" );
 		gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, 64, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, palette.data );
 
-		this.paletteTexture = texture;
+		function createTexture( index, name ) {
+			var texture = gl.createTexture();
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+			gl.uniform1i(gl.getUniformLocation(program, name), index);
+
+			return texture;
+		}
 	},
 
 	/**
@@ -128,25 +137,27 @@ VideoOutput.prototype = {
 
 		var fragmentShaderSource = [
 			"precision mediump float;",
-			"uniform sampler2D pixelTexture;",
+			"uniform sampler2D bgTexture;",
+			"uniform sampler2D spriteTexture;",
+			"uniform sampler2D prioTexture;",
 			"uniform sampler2D paletteTexture;",
+			"uniform vec4 bgColor;",
 			"varying vec2 texCoord;",
 
 			"void main(void) {",
-				"float colorIndex = texture2D(pixelTexture, texCoord).r;",
+				"float bgIndex = texture2D(bgTexture, texCoord).r;",
+				"float spriteIndex = texture2D(spriteTexture, texCoord).r;",
+				"float prioIndex = texture2D(prioTexture, texCoord).r;",
+				"float colorIndex = ((spriteIndex > 0.0 && (prioIndex == 0.0 || bgIndex == 0.0)) ? spriteIndex : bgIndex);",
 				"vec4 color = texture2D(paletteTexture, vec2(colorIndex * (4.0 + 2.0 / 64.0), 0.5));",
-				"gl_FragColor = color;",
+				"if ( colorIndex > 0.0 ) {",
+					"gl_FragColor = color;",
+				"} else {",
+					"gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);",
+					"gl_FragColor = bgColor;",
+				"}",
 			"}"
 		].join("\n");
-
-
-		var fragmentShader = gl.createShader( gl.FRAGMENT_SHADER );
-		gl.shaderSource( fragmentShader, fragmentShaderSource );
-		gl.compileShader( fragmentShader );
-
-		if ( !gl.getShaderParameter( fragmentShader, gl.COMPILE_STATUS ) ) {  
-			console.error( "An error occurred compiling the shaders: " + gl.getShaderInfoLog( fragmentShader ) );
-		}
 
 		var vertexShaderSource = [
 			"attribute vec2 vertCoord;",
@@ -158,30 +169,55 @@ VideoOutput.prototype = {
 			"}"
 		].join("");
 
-		var vertexShader = gl.createShader( gl.VERTEX_SHADER );
-		gl.shaderSource( vertexShader, vertexShaderSource );
-		gl.compileShader( vertexShader );
+		this.fragmentShader = compileShader( gl.FRAGMENT_SHADER, fragmentShaderSource );
+		this.vertexShader = compileShader( gl.VERTEX_SHADER, vertexShaderSource );
 
-		if ( !gl.getShaderParameter( fragmentShader, gl.COMPILE_STATUS ) ) {  
-			console.error( "An error occurred compiling the shaders: " + gl.getShaderInfoLog( fragmentShader ) );
+		function compileShader( shaderType, shaderSource ) {
+			var shader = gl.createShader( shaderType );
+			gl.shaderSource( shader, shaderSource );
+			gl.compileShader( shader );
+
+			if ( !gl.getShaderParameter( shader, gl.COMPILE_STATUS ) ) {  
+				throw ( "An error occurred compiling the shaders: " + gl.getShaderInfoLog( shader ) );
+			}
+
+			return shader;
 		}
+	},
 
-		var program = this.program = gl.createProgram();
-		gl.attachShader( program, vertexShader );
-		gl.attachShader( program, fragmentShader );
+	/**
+	 * Initialize WebGL program.
+	 */
+	initProgram: function() {
+		const gl = this.context;
+
+		var program = gl.createProgram();
+		gl.attachShader( program, this.vertexShader );
+		gl.attachShader( program, this.fragmentShader );
 		gl.linkProgram( program );	
 		gl.useProgram( program );
+
+		this.program = program;
 	},
 
 	/**
 	 * 'run' method for WebGL mode.
 	 */
 	runGL: function() {
-		const gl = this.context,
+		const self = this,
+		      gl = this.context,
 		      program = this.program,
-		      buffer = this.pixelBuffer,
-		      pixelTexture = this.pixelTexture,
-		      paletteTexture = this.paletteTexture;
+		      //buffer = this.pixelBuffer,
+		      bgBuffer = this.bgBuffer,
+		      spriteBuffer = this.spriteBuffer,
+		      prioBuffer = this.prioBuffer,
+		      
+		      bgTexture = this.bgTexture,
+		      spriteTexture = this.spriteTexture,
+		      prioTexture = this.prioTexture,
+
+		      paletteTexture = this.paletteTexture,
+		      pal = palette.data;
 
 		var el = this.el,
 		    context = this.context;
@@ -189,30 +225,35 @@ VideoOutput.prototype = {
 		requestAnimationFrame(function flush() {
 			requestAnimationFrame( flush );
 
-			gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+			gl.clearColor( 0, 0, 0, 1 );
 			gl.clear( gl.COLOR_BUFFER_BIT );
 
+			// upload background pixels
 			gl.activeTexture( gl.TEXTURE0 );
-			gl.bindTexture( gl.TEXTURE_2D, pixelTexture );
+			gl.bindTexture( gl.TEXTURE_2D, bgTexture );
+			gl.texImage2D( gl.TEXTURE_2D, 0, gl.LUMINANCE, 256, 224, 0,	gl.LUMINANCE, gl.UNSIGNED_BYTE,	bgBuffer );
 
-			gl.texImage2D(
-				gl.TEXTURE_2D,
-				0,
-				gl.LUMINANCE,
-				256,
-				224,
-				0,
-				gl.LUMINANCE,
-				gl.UNSIGNED_BYTE,
-				buffer
-			);
-
+			// upload sprite pixels
 			gl.activeTexture( gl.TEXTURE1 );
+			gl.bindTexture( gl.TEXTURE_2D, spriteTexture );
+			gl.texImage2D( gl.TEXTURE_2D, 0, gl.LUMINANCE, 256, 224, 0,	gl.LUMINANCE, gl.UNSIGNED_BYTE,	spriteBuffer );
+
+			// upload sprite priority pixels
+			gl.activeTexture( gl.TEXTURE2 );
+			gl.bindTexture( gl.TEXTURE_2D, prioTexture );
+			gl.texImage2D( gl.TEXTURE_2D, 0, gl.LUMINANCE, 256, 224, 0,	gl.LUMINANCE, gl.UNSIGNED_BYTE,	prioBuffer );
+
+			// activate palette texturre
+			gl.activeTexture( gl.TEXTURE3 );
 			gl.bindTexture( gl.TEXTURE_2D, paletteTexture );
 
 			var positionLocation = gl.getAttribLocation( program, "vertCoord" );
 			gl.enableVertexAttribArray( positionLocation );
 			gl.vertexAttribPointer( positionLocation, 2, gl.FLOAT, false, 0, 0 );
+
+			// set default background color
+			var color = self.bgColor * 3;
+			gl.uniform4f( self.bgColorLocation, pal[ color ] / 256, pal[ color + 1 ] / 256 , pal[ color + 2 ] / 256, 1.0  );
 
 			gl.drawArrays( gl.TRIANGLES, 0, 6 );
 		});		
@@ -239,8 +280,9 @@ VideoOutput.prototype = {
 	/**
 	 * Reset output pixel position.
 	 */
-	reset: function() {
+	reset: function( bgColor ) {
 		this.index = 0;
+		this.bgColor = bgColor;
 	},
 
 	/**
@@ -261,8 +303,15 @@ VideoOutput.prototype = {
 		// do nothing for now
 	},
 
+	outputScanline: function( scanline, background, sprites, priorities ) {
+		this.bgBuffer.set( background.subarray(0, 256), this.index ); // TODO: shorten buffers
+		this.spriteBuffer.set( sprites.subarray(0, 256), this.index );
+		this.prioBuffer.set( priorities.subarray(0, 256), this.index );
+		this.index += 256;
+	},
+
 	outputPixelGL: function( color ) {
-		this.pixelBuffer[ this.index++ ] = color;
+		this.bgBuffer[ this.index++ ] = color;
 	},
 
 	/**

@@ -164,15 +164,25 @@ PPU.prototype = {
 	/**
 	 * A single PPU tick.
 	 */
-	tick: function() {	
+	tick: function() {
+		const sprites = this.sprites,
+		      background = this.background;
+
 		if ( this.inRenderScanline ) {
 			if ( this.enabled ) {
-				this.background.evaluate();
-				this.sprites.evaluate();
+				background.evaluate();
+				sprites.evaluate();
 			}
 
 			if ( this.pixelInRange ) {
-				this.drawPixel();
+				if ( 
+					this.pixelInRange &&
+					sprites.sprite0InRange &&
+					sprites.scanlineSprite0[ this.lineCycle - 1 ] &&
+					!this.sprite0Hit
+				) {
+					this.sprite0Hit = !!background.scanlineColors[ this.lineCycle - 1 ];
+				}
 			}
 
 			this.incrementRenderCycle();
@@ -197,10 +207,20 @@ PPU.prototype = {
 		case 257:
 			this.pixelInRange = false;
 
+			if ( this.yInRange ) {
+				this.output.outputScanline(
+					this.scanline,
+					this.background.scanlineColors,
+					this.sprites.scanlineColors,
+					this.sprites.scanlinePriority
+				);
+			}
+
 			if ( this.enabled ) {
 				this.background.endScanline();
 				this.sprites.endScanline();
 			}
+
 			break;
 		case 341:
 			this.incrementScanline();
@@ -227,7 +247,7 @@ PPU.prototype = {
 
 		switch( this.scanline ) {
 		case 8:
-			this.output.reset();
+			this.output.reset( this.memory.palette[ 0 ] );
 			this.yInRange = true;
 
 			// at scanline === 8 because of overscan
@@ -250,16 +270,6 @@ PPU.prototype = {
 
 			break;
 		}
-	},
-
-	/**
-	 * Draw the pixel at the current postion.
-	 */
-	drawPixel: function() {
-		var color = this.background.setPixel();
-		color = this.sprites.setPixel( color );
-
-		this.output.outputPixel( this.memory.palette[ color ] );
 	}
 };
 

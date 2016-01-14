@@ -251,7 +251,7 @@ Sprites.prototype = {
 				color = colors[ i ];
 
 				if ( color ) {
-					this.nextScanlineColors[ x ] = palette | color;
+					this.nextScanlineColors[ x ] = this.ppu.memory.palette[ palette | color ];
 					this.nextScanlinePriority[ x ] = priority;
 					this.nextScanlineSprite0[ x ] = sprite0;
 				}
@@ -259,30 +259,6 @@ Sprites.prototype = {
 
 			x++;
 		}
-	},
-
-	setPixel: function( backgroundColor ) {
-		var x = this.ppu.lineCycle - 1,
-			color = this.scanlineColors[ x ];
-
-		if ( 
-			!color ||
-			!this.enabledPixel ||
-			this.ppu.lineCycle === 256
-		) {
-			return backgroundColor;
-		}
-
-		if ( color && this.scanlineSprite0[ x ] && backgroundColor ) {
-			this.ppu.sprite0Hit = true;
-		}
-
-		if ( backgroundColor && this.scanlinePriority[ x ] ) {
-			// sprite pixel is behind background
-			return backgroundColor;
-		}
-
-		return color;
 	}
 };
 

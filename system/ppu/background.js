@@ -78,7 +78,9 @@ Background.prototype = {
 	},
 
 	evaluate: function() {
-		const lineCycle = this.ppu.lineCycle;
+		const ppu = this.ppu,
+		      lineCycle = ppu.lineCycle,
+		      sprites = ppu.sprites;
 
 		if ( tileCycles[ lineCycle ] ) {
 			this.fetchTile();
@@ -86,7 +88,7 @@ Background.prototype = {
 
 		// finish initialization of loopy_v from loopy_t at end of pre-render scanline
 		if ( 
-			this.ppu.scanline === -1 &&
+			ppu.scanline === -1 &&
 			lineCycle > 280 &&
 			lineCycle < 304
 		) {
@@ -165,20 +167,6 @@ Background.prototype = {
 		this.y = ( this.loopyV & 0x7000 ) >> 12;
 	},
 
-	setPixel: function() {
-		const lineCycle = this.ppu.lineCycle;
-		var color = this.scanlineColors[ lineCycle - 1 ];
-
-		if (
-			!this.enabledPixel ||
-			( !this.enabledLeft && lineCycle < 9 )
-		) {
-			color = 0;
-		}
-
-		return color;
-	},
-
 	/**
 	 * Fetch background tile data.
 	 */
@@ -204,15 +192,18 @@ Background.prototype = {
 
 	renderTile: function( tile, palette ) {
 		const colors = bitmap.getColors( tile );
-		var color,
-		    i = 0,
-		    end = this.x + 8;
+		var color = 0,
+			begin = Math.max( 0, this.x ),
+			end = this.x + 8,
+		    i = 8 - ( end - begin );
 
-		for ( ; this.x < end; end-- ) {
+		for ( ; begin < end; end-- ) {
 		    color = colors[ i++ ];
 
 		    if ( color ) {
-		    	this.scanlineColors[ end ] = palette | color;
+		    	this.scanlineColors[ end ] = this.ppu.memory.palette[ palette | color ];
+		    } else {
+		    	this.scanlineColors[ end ] = this.ppu.memory.palette[ 0 ];
 		    }
 		}
 	},
