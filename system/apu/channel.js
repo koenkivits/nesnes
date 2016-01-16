@@ -39,14 +39,7 @@ Channel.prototype = {
 
 	doLengthCounter: function() {
 		if ( this.lengthCounter && !this.lengthCounterHalt ) {
-			/*if ( this.index === 3 ) {
-				console.log("LLL", this.lengthCounter );
-			}*/
 			this.lengthCounter--;
-		}
-
-		if ( this.index === 2 && !this.lengthCounter ) {
-			//console.log("whuuud");
 		}
 	},
 
@@ -95,14 +88,6 @@ Channel.prototype = {
 		this.envelopeDisabled = !!( value & 0x10 );
 		this.envelopeDividerPeriod = this.volume + 1;
 		this.envelopeStart = true;
-
-		/*if ( this.envelopeDisabled ) {
-			this.masterVolume = this.volume;
-		}*/
-
-		/*if ( this.index === 2 ) {
-			console.log(this.lengthCounterHalt, this.volume, this.envelopeDisabled);
-		}*/
 	}
 };
 

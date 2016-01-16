@@ -48,13 +48,11 @@ Noise.prototype.doTimer = function() {
 };
 
 Noise.prototype.writeRegister = function( index, value ) {
-	//console.log("sheisse", index, value);
 	switch ( index ) {
 	case 0:
 		// set envelope
 		this.setEnvelope( value );
 
-		//console.log( value.toString(2) );
 		break;
 	case 1:
 		// unused
@@ -64,17 +62,12 @@ Noise.prototype.writeRegister = function( index, value ) {
 		this.mode = ( value & 0x80 ) >>> 7;
 		this.timerMax = this.timer = periodLookup[ value & 15 ];
 
-		//console.log( this.timerMax );
-		//console.log("sheisse", this.timerMax);
 		break;
 	case 3:
 		// set length counter load and restart envelope
 		this.setLengthCounter( value >>> 3 );
 		this.envelopeStart = true;
 
-		//console.log( value >>> 3, value.toString(2), this.lengthCounter );
-
-		//console.log(this.lengthCounter);
 		break;
 	}
 };

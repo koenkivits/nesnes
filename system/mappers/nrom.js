@@ -18,7 +18,6 @@ module.exports = {
 		if ( !this.chrBanks ) {
 			// TODO, probably not doing this right for all ROMs (eg, ROMs that have both CHR ROM *and* CHR RAM)
 			this.chrData[ address ] = value;
-			//console.log(address, value);
 		}
 
 		return value;

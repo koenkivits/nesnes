@@ -31,8 +31,6 @@ function DMC( apu ) {
 DMC.prototype = new Channel();
 
 DMC.prototype.writeRegister = function( index, value ) {
-	//console.log(index, value);
-
 	switch ( index ) {
 	case 0:
 		this.irqEnabled = !!( value & 0x80 );
