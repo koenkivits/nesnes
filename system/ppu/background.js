@@ -17,7 +17,7 @@ function Background( ppu ) {
 
 	this.enabled = true;
 	this.enabledLeft = true;
-	this.enabledPixel = false;
+	this.pixelOffset = 0;
 
 	this.loopyV = 0;
 	this.loopyT = 0;
@@ -98,7 +98,7 @@ Background.prototype = {
 	},
 
 	initScanline: function() {
-		this.enabledPixel = this.enabledLeft;
+		this.pixelOffset = ( this.enabledLeft ? 0 : 8 );
 	},
 
 	endScanline: function() {
@@ -112,10 +112,6 @@ Background.prototype = {
 
 		this.scanlineColors.set( this.scanlineReset );
 		this.x = -this.loopyX;
-	},
-
-	init8Px: function() {
-		this.enabledPixel = this.ppu.enabled;
 	},
 
 	/**
@@ -192,7 +188,7 @@ Background.prototype = {
 	renderTile: function( tile, palette ) {
 		const colors = bitmap.getColors( tile );
 		var color = 0,
-			begin = Math.max( 0, this.x ),
+			begin = Math.max( this.pixelOffset, this.x ),
 			end = this.x + 7,
 		    i = 7 - ( end - begin );
 

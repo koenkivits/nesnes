@@ -200,7 +200,6 @@ PPU.prototype = {
 
 			break;
 		case 9:
-			this.background.init8Px();
 			this.sprites.init8Px();
 
 			break;
