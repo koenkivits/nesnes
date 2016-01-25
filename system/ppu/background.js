@@ -193,10 +193,10 @@ Background.prototype = {
 		const colors = bitmap.getColors( tile );
 		var color = 0,
 			begin = Math.max( 0, this.x ),
-			end = this.x + 8,
-		    i = 8 - ( end - begin );
+			end = this.x + 7,
+		    i = 7 - ( end - begin );
 
-		for ( ; begin < end; end-- ) {
+		for ( ; end >= begin; end-- ) {
 		    color = colors[ i++ ];
 
 		    if ( color ) {
