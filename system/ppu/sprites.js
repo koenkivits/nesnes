@@ -240,7 +240,7 @@ Sprites.prototype = {
 			color = 0,
 			i = 8;
 
-		for ( ; i >= 0 && x >= this.pixelOffset; i-- ) {
+		for ( ; i >= 0 && x >= this.pixelOffset && x < 0x100; i-- ) {
 			if ( !this.nextScanlineColors[ x ] ) {
 				color = colors[ i ];
 
