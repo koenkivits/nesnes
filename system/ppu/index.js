@@ -199,10 +199,6 @@ PPU.prototype = {
 			this.pixelInRange = this.yInRange;
 
 			break;
-		case 9:
-			this.sprites.init8Px();
-
-			break;
 		case 257:
 			this.pixelInRange = false;
 

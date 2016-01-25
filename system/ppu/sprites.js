@@ -10,7 +10,7 @@ function Sprites( ppu ) {
 
 	this.enabled = true;
 	this.enabledLeft = true;
-	this.enabledPixel = false;
+	this.pixelOffset = 0;
 
 	// OAM
 	this.oamAddress = 0;
@@ -87,16 +87,10 @@ Sprites.prototype = {
 
 		this.spriteCount = this.nextSpriteCount;
 		this.nextSpriteCount = 0;
-
-		this.enabledPixel = this.enabledLeft;
 	},
 
 	endScanline: function() {
 		this.initSecondaryOAM();
-	},
-
-	init8Px: function() {
-		this.enabledPixel = this.enabled;
 	},
 
 	readOAM: function() {
@@ -246,7 +240,7 @@ Sprites.prototype = {
 			color = 0,
 			i = 8;
 
-		for ( ; i >= 0; i-- ) {
+		for ( ; i >= 0 && x >= this.pixelOffset; i-- ) {
 			if ( !this.nextScanlineColors[ x ] ) {
 				color = colors[ i ];
 
