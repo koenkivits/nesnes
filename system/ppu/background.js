@@ -277,10 +277,10 @@ function initTileCycles() {
 	var i,
 	    result = new Uint8Array( 400 );
 
-	for ( i = 9; i < 258; i += 8 ) {
+	for ( i = 7; i < 256; i += 8 ) {
 		result[ i ] = 1;
 	}
-	for ( i = 329; i < 338; i += 8 ) {
+	for ( i = 327; i < 336; i += 8 ) {
 		result[ i ] = 1;
 	}
 
