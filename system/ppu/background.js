@@ -29,8 +29,8 @@ function Background( ppu ) {
 	this.x = 0;
 	this.y = 0;
 
-	this.scanlineColors = new Uint8Array( 0x200 );
-	this.scanlineReset = new Uint8Array( 0x200 );
+	this.scanlineColors = new Uint8Array( 0x100 );
+	this.scanlineReset = new Uint8Array( 0x100 );
 
 	Object.preventExtensions( this );
 }
@@ -188,18 +188,18 @@ Background.prototype = {
 	renderTile: function( tile, palette ) {
 		const colors = bitmap.getColors( tile );
 		var color = 0,
-			begin = Math.max( this.pixelOffset, this.x ),
-			end = this.x + 7,
+		    begin = Math.max( this.pixelOffset, this.x ),
+		    end = Math.min( 0xff, this.x + 7 ),
 		    i = 7 - ( end - begin );
 
 		for ( ; end >= begin; end-- ) {
 		    color = colors[ i++ ];
 
-		    if ( color ) {
-		    	this.scanlineColors[ end ] = this.ppu.memory.palette[ palette | color ];
-		    } else {
-		    	this.scanlineColors[ end ] = this.ppu.memory.palette[ 0 ];
-		    }
+			if ( color ) {
+				this.scanlineColors[ end ] = this.ppu.memory.palette[ palette | color ];
+			} else {
+				this.scanlineColors[ end ] = this.ppu.memory.palette[ 0 ];
+			}
 		}
 	},
 

@@ -64,8 +64,8 @@ VideoOutput.prototype = {
 	 * @param {Uint8Array} priorities - Scanline sprite priority buffer
 	 */
 	outputScanline: function( background, sprites, priorities ) {
-		this.bgBuffer.set( background.subarray(0, 256), this.index ); // TODO: shorten buffers
-		this.spriteBuffer.set( sprites.subarray(0, 256), this.index );
+		this.bgBuffer.set( background, this.index );
+		this.spriteBuffer.set( sprites.subarray(0, 256), this.index ); // TODO: shorten buffers
 		this.prioBuffer.set( priorities.subarray(0, 256), this.index );
 		this.index += 256;
 	},
