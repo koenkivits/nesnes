@@ -197,8 +197,6 @@ Background.prototype = {
 
 			if ( color ) {
 				this.scanlineColors[ end ] = this.ppu.memory.palette[ palette | color ];
-			} else {
-				this.scanlineColors[ end ] = this.ppu.memory.palette[ 0 ];
 			}
 		}
 	},
