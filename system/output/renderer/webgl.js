@@ -139,7 +139,7 @@ WebGLRenderer.prototype = {
 				"float spriteIndex = texture2D(spriteTexture, texCoord).r;",
 				"float prioIndex = texture2D(prioTexture, texCoord).r;",
 				"float colorIndex = ((spriteIndex > 0.0 && (prioIndex == 0.0 || bgIndex == 0.0)) ? spriteIndex : bgIndex);",
-				"vec4 color = texture2D(paletteTexture, vec2(colorIndex * (4.0 + 2.0 / 64.0), 0.5));",
+				"vec4 color = texture2D(paletteTexture, vec2( colorIndex * 4.0 + 0.0078, 0.5));", // 0.0078 == ( 0.5 * 3 / 192 ) === ( 0.5 * [RGB colors] / [palette width] )
 				"if ( colorIndex > 0.0 ) {",
 					"gl_FragColor = color;",
 				"} else {",
