@@ -12,7 +12,7 @@ WebGLRenderer.isSupported = function( el ) {
 
 WebGLRenderer.prototype = {
 	renderFrame: function( output ) {
-		const gl = this.gl;
+		var gl = this.gl;
 
 		gl.clearColor( 0, 0, 0, 1 );
 		gl.clear( gl.COLOR_BUFFER_BIT );
@@ -48,7 +48,7 @@ WebGLRenderer.prototype = {
 	},
 
 	initGL: function() {
-		const gl = this.gl = getGL( this.el );
+		var gl = this.gl = getGL( this.el );
 
 		// set up viewport
 		gl.viewport( 0, 0, 256, 224 );
@@ -67,9 +67,9 @@ WebGLRenderer.prototype = {
 	 * Initialize the quad to draw to.
 	 */
 	initBuffers: function() {
-		const gl = this.gl;
+		var gl = this.gl;
 
-		const buffer = this.buffer = gl.createBuffer();
+		var buffer = this.buffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 		gl.bufferData(
 			gl.ARRAY_BUFFER,
@@ -91,7 +91,7 @@ WebGLRenderer.prototype = {
 	 * the system palette.
 	 */
 	initTextures: function() {
-		const gl = this.gl,
+		var gl = this.gl,
 		      program = this.program;
 
 
@@ -123,7 +123,7 @@ WebGLRenderer.prototype = {
 	 * Initialize WebGL shaders.
 	 */
 	initShaders: function() {
-		const gl = this.gl;
+		var gl = this.gl;
 
 		var fragmentShaderSource = [
 			"precision mediump float;",
@@ -179,7 +179,7 @@ WebGLRenderer.prototype = {
 	 * Initialize WebGL program.
 	 */
 	initProgram: function() {
-		const gl = this.gl;
+		var gl = this.gl;
 
 		var program = gl.createProgram();
 		gl.attachShader( program, this.vertexShader );

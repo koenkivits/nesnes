@@ -1,8 +1,8 @@
-const WebGLRenderer = require( "./renderer/webgl" ),
-      Canvas2DRenderer = require( "./renderer/canvas2d" );
+var WebGLRenderer = require( "./renderer/webgl" ),
+    Canvas2DRenderer = require( "./renderer/canvas2d" );
 
 function VideoOutput() {
-	const width = 256,
+	var width = 256,
 	      height = 225,
 	      length = width * height;
 
@@ -22,7 +22,7 @@ VideoOutput.prototype = {
 	 * 'run' method for WebGL mode.
 	 */
 	run: function() {
-		const self = this;
+		var self = this;
 
 		requestAnimationFrame(function flush() {
 			requestAnimationFrame( flush );

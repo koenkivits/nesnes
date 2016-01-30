@@ -24,9 +24,9 @@ function CPU( system ) {
 	    LOW = 0xff,
 	    HIGH = 0xff00;
 
-	const VECTOR_NMI = 0xfffa,
-	      VECTOR_RESET = 0xfffc,
-	      VECTOR_IRQ = 0xfffe;
+	var VECTOR_NMI = 0xfffa,
+	    VECTOR_RESET = 0xfffc,
+	    VECTOR_IRQ = 0xfffe;
 
 	function reset() {
 		interrupt( VECTOR_RESET );

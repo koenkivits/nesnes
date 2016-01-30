@@ -13,17 +13,17 @@ Canvas2DRenderer.isSupported = function( el ) {
 
 Canvas2DRenderer.prototype = {
 	renderFrame: function( output ) {
-		const bgBuffer = output.bgBuffer,
-		      spriteBuffer = output.spriteBuffer,
-		      prioBuffer = output.prioBuffer,
-		      bgColor = output.bgColor,
+		var bgBuffer = output.bgBuffer,
+		    spriteBuffer = output.spriteBuffer,
+		    prioBuffer = output.prioBuffer,
+		    bgColor = output.bgColor,
 
-		      reds = this.reds,
-		      greens = this.greens,
-		      blues = this.blues,
+		    reds = this.reds,
+		    greens = this.greens,
+		    blues = this.blues,
 
-		      end = bgBuffer.length;
-		      data = this.data;
+		    end = bgBuffer.length;
+		    data = this.data;
 
 		var pixelIndex = 0,
 			outputIndex = 0,

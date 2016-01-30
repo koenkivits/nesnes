@@ -1,4 +1,4 @@
-const CONTROLLER_COUNT = 2;
+var CONTROLLER_COUNT = 2;
 
 function Controllers( system ) {
 	this.system = system;

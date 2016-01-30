@@ -3,13 +3,13 @@
 var bitmap = require( "../utils/bitmap" );
 
 // bitmasks
-const NAMETABLE_BITMASK = 0xc00,
-      NAMETABLE_RESET = ~NAMETABLE_BITMASK,
+var NAMETABLE_BITMASK = 0xc00,
+    NAMETABLE_RESET = ~NAMETABLE_BITMASK,
 
-      attrAddresses = initAttrAddresses(),
-      tileCycles = initTileCycles(),
-      palettes = initPalettes(),
-      masks = initMasks();
+    attrAddresses = initAttrAddresses(),
+    tileCycles = initTileCycles(),
+    palettes = initPalettes(),
+    masks = initMasks();
 
 function Background( ppu ) {
 	this.ppu = ppu;
@@ -78,8 +78,8 @@ Background.prototype = {
 	},
 
 	evaluate: function() {
-		const ppu = this.ppu,
-		      lineCycle = ppu.lineCycle;
+		var ppu = this.ppu,
+		    lineCycle = ppu.lineCycle;
 
 		if ( tileCycles[ lineCycle ] ) {
 			this.fetchTile();
@@ -166,7 +166,7 @@ Background.prototype = {
 	 * Fetch background tile data.
 	 */
 	fetchTile: function() {
-		const cartridge = this.memory.cartridge,
+		var cartridge = this.memory.cartridge,
 
 		      attrAddress = attrAddresses[ this.loopyV ],
 		      attribute = cartridge.readNameTable( attrAddress & 0x1fff ),
@@ -186,8 +186,8 @@ Background.prototype = {
 	},
 
 	renderTile: function( tile, palette ) {
-		const colors = bitmap.getColors( tile );
-		var color = 0,
+		var colors = bitmap.getColors( tile),
+		    color = 0,
 		    begin = Math.max( this.pixelOffset, this.x ),
 		    end = Math.min( 0xff, this.x + 7 ),
 		    i = 7 - ( end - begin );

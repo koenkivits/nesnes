@@ -165,8 +165,8 @@ PPU.prototype = {
 	 * A single PPU tick.
 	 */
 	tick: function() {
-		const sprites = this.sprites,
-		      background = this.background;
+		var sprites = this.sprites,
+		    background = this.background;
 
 		if ( this.inRenderScanline ) {
 			if ( this.enabled ) {

@@ -1,11 +1,12 @@
 "use strict";
 
 var mappers = require("./mappers");
-const HORIZONTAL = 0,
-      VERTICAL = 1,
-      FOUR_SCREEN = 2,
-      SINGLE_SCREEN_LOWER = 3,
-      SINGLE_SCREEN_UPPER = 4;
+
+var HORIZONTAL = 0,
+    VERTICAL = 1,
+    FOUR_SCREEN = 2,
+    SINGLE_SCREEN_LOWER = 3,
+    SINGLE_SCREEN_UPPER = 4;
 
 function Cartridge( data, system ) {
 	this.system = system;
@@ -193,7 +194,7 @@ Cartridge.prototype = {
 	},
 
 	readTile: function( baseTable, tileIndex, y ) {
-		const tileAddress = ( tileIndex << 4 ) + baseTable + y;
+		var tileAddress = ( tileIndex << 4 ) + baseTable + y;
 
 		return (
 			( this.readCHR( tileAddress ) << 8 ) |

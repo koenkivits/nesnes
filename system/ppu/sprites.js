@@ -2,7 +2,7 @@
 
 var bitmap = require("../utils/bitmap");
 
-const tileCycles = initTileCycles(); 
+var tileCycles = initTileCycles();
 
 function Sprites( ppu ) {
 	this.ppu = ppu;
@@ -126,7 +126,7 @@ Sprites.prototype = {
 	 * Initialize secondary OAM ('sprite evaluation').
 	 */
 	initSecondaryOAM: function() {
-		const ppu = this.ppu;
+		var ppu = this.ppu;
 
 		if ( !ppu.enabled  ) {
 			return;

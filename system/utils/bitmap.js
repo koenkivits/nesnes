@@ -1,6 +1,6 @@
-const colors = initColors();
-const reversedBytes = initReversedBytes();
-const reversedTiles = initReversedTiles();
+var colors = initColors();
+var reversedBytes = initReversedBytes();
+var reversedTiles = initReversedTiles();
 
 /**
  * Get the colors of a tile.
@@ -8,7 +8,7 @@ const reversedTiles = initReversedTiles();
  * colors as the last 8 bits.
  */
 exports.getColors = function( tile ) {
-	const offset = tile << 8;
+	var offset = tile << 8;
 	return colors.subarray( offset, offset + 8 );
 };
 
