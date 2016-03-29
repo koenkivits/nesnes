@@ -88,9 +88,9 @@ System.prototype = {
 	 * Run a single frame (1/60s NTCS, 1/50s PAL).
 	 */
 	runFrame: function() {
-		const cpu = this.cpu,
-		      ppu = this.ppu,
-		      apu = this.apu;
+		var cpu = this.cpu,
+		    ppu = this.ppu,
+		    apu = this.apu;
 
 		while ( !ppu.frameEnded ) {
 			cpu.tick();
