@@ -1,6 +1,8 @@
 # NESNES
 
-NESNES (New EcmaScript NES) is a pure JS NES emulator.
+NESNES (New EcmaScript NES) is a pure JS NES emulator. Try the [demo](http://koen.kivits.com/nesnes)!
+
+[![NESNES screenshot](http://koen.kivits.com/nesnes/screenshot.png)](http://koen.kivits.com/nesnes)
 
 ## Installation
 
@@ -10,7 +12,7 @@ NESNES can be installed through npm:
 npm install nesnes
 ```
 
-## Usage
+## Getting started
 
 NESNES can be used as follows:
 
