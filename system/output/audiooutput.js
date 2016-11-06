@@ -40,8 +40,7 @@ AudioOutput.prototype = {
 		this.enabled = enabled && this.isSupported();
 
 		if ( this.enabled ) {
-			this.initContext();
-			this.initBuffer();
+			this.initHardware();
 		}
 	},
 
@@ -52,6 +51,21 @@ AudioOutput.prototype = {
 	setVolume: function( value ) {
 		this.gainNode.gain.value = value;
 		this.volume = value;
+	},
+
+	/**
+	 * Initialize hardware output.
+	 * Does nothing if audio context is already initialized.
+	 */
+	initHardware: function() {
+		// make sure we don't create too many AudioContexts, because this will throw
+		// an error
+		if ( this.context ) {
+			return;
+		}
+
+		this.initContext();
+		this.initBuffer();
 	},
 
 	/**
