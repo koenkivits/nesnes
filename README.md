@@ -45,7 +45,7 @@ Default configuration (keyboard and gamepad input) can be found in ``config.json
 
 ```js
 // configure the first player controller to use the gamepad
-nesnes.input.configure(0, "gamepad", {
+emulator.input.configure(0, "gamepad", {
 	"buttons": {
 		"0": "b",
 		"1": "a",
