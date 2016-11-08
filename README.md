@@ -41,7 +41,25 @@ This will create ``nesnes.js`` in ``dist/``, which exposes a global NesNes objec
 
 ## Configuration
 
-Configuration (currently only keyboard input) can be found in ``config.json``.
+Default configuration (keyboard and gamepad input) can be found in ``config.json``. Input can also be configured programmatically:
+
+```js
+// configure the first player controller to use the gamepad
+nesnes.input.configure(0, "gamepad", {
+	"buttons": {
+		"0": "b",
+		"1": "a",
+		"8": "select",
+		"9": "start"
+	},
+	"axes": {
+		"0": "horizontal", // map axis 0 to left/right
+		"1": "vertical", // map axis 1 to up/down
+	}
+})
+```
+
+See ``config.json`` for an example configuration.
 
 ## Testing
 

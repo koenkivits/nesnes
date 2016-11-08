@@ -1,3 +1,4 @@
+var Gamepad = require("./gamepad");
 var Keyboard = require("./keyboard");
 var StandardController = require("../controllers/standardcontroller");
 
@@ -35,13 +36,14 @@ Input.prototype = {
 	 * @param {boolean} enabled - If true enable, otherwise disable.
 	 */
 	_setEnabled: function( enabled ) {
-		var handler,
+		var handlers,
 			method = enabled ? "enable" : "disable";
 
+		this._enabled = enabled;
 		for ( var i = 0; i < this.inputHandlers.length; i++ ) {
-			handler = this.inputHandlers[ i ];
-			if ( handler )  {
-				handler[ method ]();
+			handlers = this.inputHandlers[ i ];
+			if ( handlers )  {
+				handlers[ method ]();
 			}
 		}
 	},
@@ -57,7 +59,7 @@ Input.prototype = {
 			item = config[ i ];
 			
 			this.setController( i, item.type );
-			this.setInputHandler( i, item.input, item.config );
+			this.configure( i, item.controls.type, item.controls.config );
 		}
 	},
 
@@ -72,15 +74,26 @@ Input.prototype = {
 	},
 
 	/**
-	 * Bind input handler to controller.
-	 * @param {number} index - Either 0 or 1.
-	 * @param {string} input - Type of input handler (eg. 'keyboard').
-	 * @param {object} config - Configuration for keyboard handler.
+	 * Configure the input for a controller
+	 * @param {number} index - Either 0 or 1
+	 * @param {string} input - Type of input handler (either 'keyboard' or 'gamepad')
+	 * @param {object} config - Configuration for input handler (see config.json for examples)
 	 */
-	setInputHandler: function( index, input, config ) {
-		var InputHandler = inputHandlerMap[ input ],
+	configure: function( index, input, config ) {
+		var currentHandler,
+			InputHandler = inputHandlerMap[ input ],
 			controller = this.controllers.get( index );
+
+		currentHandler = this.inputHandlers[ index ];
+		if ( currentHandler ) {
+			currentHandler.disable();
+		}
+
 		this.inputHandlers[ index ] = new InputHandler( controller, config );
+
+		if ( this._enabled ) {
+			this.inputHandlers[ index ].enable();
+		}
 	}
 };
 
@@ -89,6 +102,7 @@ var controllerMap = {
 };
 
 var inputHandlerMap = {
+	"gamepad": Gamepad,
 	"keyboard": Keyboard
 };
 
