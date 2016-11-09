@@ -36,14 +36,16 @@ Input.prototype = {
 	 * @param {boolean} enabled - If true enable, otherwise disable.
 	 */
 	_setEnabled: function( enabled ) {
-		var handlers,
+		var handlers, type,
 			method = enabled ? "enable" : "disable";
 
 		this._enabled = enabled;
 		for ( var i = 0; i < this.inputHandlers.length; i++ ) {
 			handlers = this.inputHandlers[ i ];
 			if ( handlers )  {
-				handlers[ method ]();
+				for ( type in handlers ) {
+					handlers[ type ][ method ]();
+				}
 			}
 		}
 	},
@@ -52,14 +54,22 @@ Input.prototype = {
 	 * Initialize total input config.
 	 */
 	initConfig: function() {
-		var item,
+		var i, j, item, controls,
 		    config = this.config = this.system.config.input;
 
-		for ( var i = 0; i < config.length; i++ ) {
+		for ( i = 0; i < config.length; i++ ) {
 			item = config[ i ];
 			
 			this.setController( i, item.type );
-			this.configure( i, item.controls.type, item.controls.config );
+
+			controls = item.controls;
+			if ( !Array.isArray(controls) ) {
+				controls = [ controls ];
+			}
+
+			for ( j = 0; j < controls.length; j++ ) {
+				this.configure( i, controls[ j ].type, controls[ j ].config );
+			}
 		}
 	},
 
@@ -76,24 +86,29 @@ Input.prototype = {
 	/**
 	 * Configure the input for a controller
 	 * @param {number} index - Either 0 or 1
-	 * @param {string} input - Type of input handler (either 'keyboard' or 'gamepad')
+	 * @param {string} type - Type of input handler (either 'keyboard' or 'gamepad')
 	 * @param {object} config - Configuration for input handler (see config.json for examples)
 	 */
-	configure: function( index, input, config ) {
+	configure: function( index, type, config ) {
 		var currentHandler,
-			InputHandler = inputHandlerMap[ input ],
+			InputHandler = inputHandlerMap[ type ],
 			controller = this.controllers.get( index );
 
-		currentHandler = this.inputHandlers[ index ];
+		this.initInputHandlers( index );
+		currentHandler = this.inputHandlers[ index ][ type ];
 		if ( currentHandler ) {
 			currentHandler.disable();
 		}
 
-		this.inputHandlers[ index ] = new InputHandler( controller, config );
+		this.inputHandlers[ index ][ type ] = new InputHandler( controller, config );
 
 		if ( this._enabled ) {
-			this.inputHandlers[ index ].enable();
+			this.inputHandlers[ index ][ type ].enable();
 		}
+	},
+
+	initInputHandlers: function( index ) {
+		this.inputHandlers[ index ] = this.inputHandlers[ index ] || {};
 	}
 };
 

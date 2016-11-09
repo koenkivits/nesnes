@@ -61,6 +61,8 @@ emulator.input.configure(0, "gamepad", {
 
 See ``config.json`` for an example configuration.
 
+Note that multiple input types can be enabled for a single controller. For example, a single controller can listen to both the keyboard and a gamepad.
+
 ## Testing
 
 NESNES includes a basic test server. You can run it by executing:

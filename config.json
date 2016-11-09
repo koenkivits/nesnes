@@ -2,26 +2,47 @@
 	"input": [
 		{
 			"type": "standard",
-			"controls": {
-				"type": "keyboard",
-				"config": {
-					"z": "a",
-					"x": "b",
-					"shift": "select",
-					"return": "start",
-					"up": "up",
-					"down": "down",
-					"left": "left",
-					"right": "right"
+			"controls": [
+				{
+					"type": "keyboard",
+					"config": {
+						"z": "a",
+						"x": "b",
+						"shift": "select",
+						"return": "start",
+						"up": "up",
+						"down": "down",
+						"left": "left",
+						"right": "right"
+					}
+				}, {
+					"type": "gamepad",
+					"config": {
+						"index": 0,
+						"buttons": {
+							"0": "b",
+							"1": "a",
+							"2": "a",
+							"3": "b",
+							"8": "select",
+							"9": "start"
+						},
+						"axes": {
+							"0": "horizontal",
+							"1": "vertical",
+							"4": "horizontal",
+							"5": "vertical"
+						}
+					}
 				}
-			}
+			]
 		},
 		{
 			"type": "standard",
 			"controls": {
 				"type": "gamepad",
 				"config": {
-					"index": 0,
+					"index": 1,
 					"buttons": {
 						"0": "b",
 						"1": "a",
