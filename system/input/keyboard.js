@@ -1,45 +1,32 @@
-function Keyboard( controller, config ) {
-	this.controller = controller;
-	this.handlers = {};
+var ControllerHandler = require( "./controllerhandler" );
 
-	if ( config ) {
-		this.configure( config );
-	}
+var Keyboard = ControllerHandler.extend({
+	initialize: function() {
+		this.handlers = {};
+	},
 
-	this.enabled = false;
-}
-
-Keyboard.prototype = {
 	/**
 	 * Load configuration.
 	 * @param {object} config - An mapping of keyboard keys to controller buttons.
 	 */
-	configure: function( config ) {
-		this.config = config;
+	_configure: function() {
 		this.initKeyCodes();
 	},
 
 	/**
 	 * Bind keyboard events.
 	 */
-	enable: function() {
-		// make sure event handlers aren't bound twice
-		if ( !this.enabled ) {
-			this.bindHandler( "keydown" );
-			this.bindHandler( "keyup" );
-		}
-
-		this.enabled = true;
+	_enable: function() {
+		this.bindHandler( "keydown" );
+		this.bindHandler( "keyup" );
 	},
 
 	/**
 	 * Unbind keyboard events.
 	 */
-	disable: function() {
+	_disable: function() {
 		this.unbindHandler( "keydown" );
 		this.unbindHandler( "keyup" );
-
-		this.enabled = false;
 	},
 
 	/**
@@ -74,7 +61,7 @@ Keyboard.prototype = {
 			var keyCode = e.keyCode;
 
 			if ( keyCode in self.keyCodes ) {
-				self.controller[ handler ]( self.keyCodes[ keyCode ] );
+				self[ handler ]( self.keyCodes[ keyCode ] );
 				e.preventDefault();
 			}
 		};
@@ -104,7 +91,7 @@ Keyboard.prototype = {
 
 		this.keyCodes = keyCodes;
 	}
-};
+});
 
 var keyCodeMap = {
 	"backspace": 8,
