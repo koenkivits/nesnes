@@ -1,33 +1,28 @@
-function Gamepad( controller, config ) {
-	this.controller = controller;
-	this.handlers = {};
+var ControllerHandler = require("./controllerhandler");
 
-	if ( config ) {
-		this.configure( config );
-	}
-
-	this.enabled = false;
-}
-
-Gamepad.prototype = {
+var Gamepad = ControllerHandler.extend({
 	/**
 	 * Load configuration.
 	 * @param {object} config - A mapping of gamepad buttons/axes to controller
 	 *                          buttons. See config.json for an example.
 	 */
-	configure: function( config ) {
-		this.config = config;
-		this.config.index = config.index || 0;
+	_configure: function() {
+		this.config.index = this.config.index || 0;
 	},
 
 	/**
 	 * Enable gamepad input
 	 */
-	enable: function() {
-		if ( this.isSupported() && !this.enabled ) {
-			this.enabled = true;
-			this.initConnection();
-		}
+	_enable: function() {
+		this.initConnection();
+	},
+
+	/**
+     * Disable gamepad input
+	 */
+	_disable: function() {
+		this.clearConnection();
+		this.stopListening();
 	},
 
 	/**
@@ -39,15 +34,6 @@ Gamepad.prototype = {
 			window.navigator &&
 			("getGamepads" in window.navigator)
 		);
-	},
-
-	/**
-     * Disable gamepad input
-	 */
-	disable: function() {
-		this.enabled = false;
-		this.clearConnection();
-		this.stopListening();
 	},
 
 	/**
@@ -152,9 +138,9 @@ Gamepad.prototype = {
 		// translate pressed state to controlled input
 		for ( button in pressed ) {
 			if ( pressed[ button ] ) {
-				this.controller.press( button );
+				this.press( button );
 			} else {
-				this.controller.depress( button );
+				this.depress( button );
 			}
 		}
 	},
@@ -193,8 +179,8 @@ Gamepad.prototype = {
 				// axis can go only one way (no up AND down, for example), so make sure
 				// only 1 gets pressed
 				directions = axisMap[ axis ];
-				this.controller.press( value < 0 ? directions[ 0 ] : directions[ 1 ]);
-				this.controller.depress( value < 0 ? directions[ 1 ] : directions[ 0 ]);
+				this.press( value < 0 ? directions[ 0 ] : directions[ 1 ]);
+				this.depress( value < 0 ? directions[ 1 ] : directions[ 0 ]);
 			}
 		}
 
@@ -206,10 +192,10 @@ Gamepad.prototype = {
 
 			directions = axisMap[ axis ];
 			for ( index = 0; index < directions.length; index++ ) {
-				this.controller.depress( directions[ index ] );
+				this.depress( directions[ index ] );
 			}
 		}
 	}
-};
+});
 
 module.exports = Gamepad;
