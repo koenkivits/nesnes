@@ -1,6 +1,6 @@
 {
   "name": "nesnes",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "New EcmaScript NES emulator",
   "main": "main.js",
   "keywords": [
