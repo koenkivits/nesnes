@@ -1,111 +1,114 @@
-var ControllerHandler = require( "./controllerhandler" );
+import ControllerHandler from './controllerhandler';
 
-var Keyboard = ControllerHandler.extend({
-	initialize: function() {
-		this.handlers = {};
-	},
+class Keyboard extends ControllerHandler {
+  static isSupported() {
+    return true;
+  }
 
-	/**
-	 * Load configuration.
-	 * @param {object} config - An mapping of keyboard keys to controller buttons.
-	 */
-	_configure: function() {
-		this.initKeyCodes();
-	},
+  initialize() {
+    this.handlers = {};
+  }
 
-	/**
-	 * Bind keyboard events.
-	 */
-	_enable: function() {
-		this.bindHandler( "keydown" );
-		this.bindHandler( "keyup" );
-	},
+  /**
+   * Load configuration.
+   * @param {object} config - An mapping of keyboard keys to controller buttons.
+   */
+  _configure() {
+    this.initKeyCodes();
+  }
 
-	/**
-	 * Unbind keyboard events.
-	 */
-	_disable: function() {
-		this.unbindHandler( "keydown" );
-		this.unbindHandler( "keyup" );
-	},
+  /**
+   * Bind keyboard events.
+   */
+  _enable() {
+    this.bindHandler('keydown');
+    this.bindHandler('keyup');
+  }
 
-	/**
-	 * Bind keyboard event of specific type.
-	 * @param {string} type - Either 'keydown' or 'keyup'.
-	 */
-	bindHandler: function( type ) {
-		window.addEventListener( type, this.getHandler( type ) );
-	},
+  /**
+   * Unbind keyboard events.
+   */
+  _disable() {
+    this.unbindHandler('keydown');
+    this.unbindHandler('keyup');
+  }
 
-	/**
-	 * Unbind keyboard event of specific type.
-	 * @param {string} type - Either 'keydown' or 'keyup'.
-	 */
-	unbindHandler: function( type ) {
-		window.removeEventListener( type, this.getHandler( type ) );
-	},
+  /**
+   * Bind keyboard event of specific type.
+   * @param {string} type - Either 'keydown' or 'keyup'.
+   */
+  bindHandler(type) {
+    window.addEventListener(type, this.getHandler(type));
+  }
 
-	/**
-	 * Get keyboard event handler of specific type.
-	 * @param {string} type - Either 'keydown' or 'keyup'.
-	 */
-	getHandler: function( type ) {
-		if ( this.handlers[ type ] ) {
-			return this.handlers[ type ];
-		}
+  /**
+   * Unbind keyboard event of specific type.
+   * @param {string} type - Either 'keydown' or 'keyup'.
+   */
+  unbindHandler(type) {
+    window.removeEventListener(type, this.getHandler(type));
+  }
 
-		var self = this,
-		    handler = type === "keydown" ? "press" : "depress";
+  /**
+   * Get keyboard event handler of specific type.
+   * @param {string} type - Either 'keydown' or 'keyup'.
+   */
+  getHandler(type) {
+    if (this.handlers[type]) {
+      return this.handlers[type];
+    }
 
-		this.handlers[ type ] = function( e ) {
-			var keyCode = e.keyCode;
+    const handler = type === 'keydown' ? 'press' : 'depress';
 
-			if ( keyCode in self.keyCodes ) {
-				self[ handler ]( self.keyCodes[ keyCode ] );
-				e.preventDefault();
-			}
-		};
+    this.handlers[type] = (e) => {
+      const keyCode = e.keyCode;
 
-		return this.handlers[ type ];
-	},
+      if (keyCode in this.keyCodes) {
+        this[handler](this.keyCodes[keyCode]);
+        e.preventDefault();
+      }
+    };
 
-	/**
-	 * Initialize keycodes from config.
-	 * Converts config key strings to numeric keycodes that can be used in event handlers.
-	 */
-	initKeyCodes: function() {
-		var name, keyCode,
-		    keyCodes = {};
+    return this.handlers[type];
+  }
 
-		for ( name in this.config ) {
-			if ( name in keyCodeMap ) {
-				// special cases ('ctrl', 'shift', etc)
-				keyCode = keyCodeMap[ name ];
-			} else {
-				// letters and numbers
-				keyCode = name.toUpperCase().charCodeAt();
-			}
+  /**
+   * Initialize keycodes from config.
+   * Converts config key strings to numeric keycodes that can be used in event handlers.
+   */
+  initKeyCodes() {
+    let keyCode;
+    const keyCodes = {};
 
-			keyCodes[ keyCode ] = this.config[ name ];
-		}
+    for (let name in this.config) {
+      if (name in keyCodeMap) {
+        // special cases ('ctrl', 'shift', etc)
+        keyCode = keyCodeMap[name];
+      } else {
+        // letters and numbers
+        keyCode = name.toUpperCase().charCodeAt();
+      }
 
-		this.keyCodes = keyCodes;
-	}
-});
+      keyCodes[keyCode] = this.config[name];
+    }
 
-var keyCodeMap = {
-	"backspace": 8,
-	"tab": 9,
-	"return": 13,
-	"shift": 16,
-	"ctrl": 17,
-	"alt": 18,
-	"capslock": 20,
-	"space": 32,
-	"left": 37,
-	"up": 38,
-	"right": 39,
-	"down": 40,
+    this.keyCodes = keyCodes;
+  }
+}
+
+const keyCodeMap = {
+  backspace: 8,
+  tab: 9,
+  return: 13,
+  shift: 16,
+  ctrl: 17,
+  alt: 18,
+  capslock: 20,
+  space: 32,
+  left: 37,
+  up: 38,
+  right: 39,
+  down: 40,
 };
 
-module.exports = Keyboard;
+export default Keyboard;

@@ -1,9 +1,11 @@
-var AudioOutput = require("./audiooutput");
-var VideoOutput = require("./videooutput");
+import AudioOutput from './audiooutput';
+import VideoOutput from './videooutput';
 
-function Output() {
-	this.audio = new AudioOutput();
-	this.video = new VideoOutput();
+class Output {
+  constructor() {
+    this.audio = new AudioOutput();
+    this.video = new VideoOutput();
+  }
 }
 
-module.exports = Output;
+export default Output;

@@ -7,9 +7,10 @@ var path = require( "path" );
 var http = require( "http" );
 var url = require( "url" );
 
-var browserify = require( "browserify" );
+var rollup = require( "rollup" );
+var rollupPluginJson = require( "rollup-plugin-json" );
 var dot = require( "dot");
-var Cartridge = require( "../system/cartridge" );
+var Cartridge = require( "../dist/cartridge" );
 
 const GAME_PATH = "/game/";
 const ROM_PATH = "/rom/";
@@ -152,32 +153,42 @@ class NesNesServer {
 	 */
 	_serveHtml( response, selectedRom ) {
 		var html,
-		    context = this;
+				context = this;
 
-		try {
+		// bundle NesNes build
+		rollup
+			.rollup( {
+				entry: path.join( __dirname, "../index.js" ),
+				plugins: [ rollupPluginJson() ],
+			} )
 
-			// bundle NesNes build
-			browserify( [ path.join( __dirname, "../index.js" ) ], { standalone: "NesNes" } ).bundle( function( err, script ) {
+			.then( function ( bundle ) {
+				var script = bundle.generate( {
+				format: 'iife',
+				moduleName: 'NesNes',
+				dest: 'dist/nesnes.js',
+			} );
 
-				// render and write HTML page
-				html = template({
-					pretty: true,
-					cartridges: context._mapperRoms,
-					selectedRom: selectedRom,
-					script: script.toString(),
+			// render and write HTML page
+			html = template({
+				pretty: true,
+				cartridges: context._mapperRoms,
+				selectedRom: selectedRom,
+				script: script.code,
 
-					GAME_PATH: GAME_PATH,
-					ROM_PATH: ROM_PATH,
-				});
-
-				response.write(html);
-				response.end();
+				GAME_PATH: GAME_PATH,
+				ROM_PATH: ROM_PATH,
 			});
-		} catch ( e ) {
+
+			response.write(html);
+			response.end();
+		} )
+
+		.catch( function( e ) {
 			html = e.toString();
 			response.write( html );
 			response.end();
-		}
+		} );
 	}
 }
 

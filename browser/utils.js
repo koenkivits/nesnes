@@ -1,15 +1,19 @@
-exports.readFile = function( filename, callback ) {
-	var xhr = new XMLHttpRequest();
-	xhr.open( "GET", filename );
-	xhr.responseType = "arraybuffer";
+function readFile(filename, callback) {
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', filename);
+  xhr.responseType = 'arraybuffer';
 
-	xhr.onload = function() {
-		callback( xhr.response );
-	};
+  xhr.onload = () => {
+    callback(xhr.response);
+  };
 
-	xhr.onerror = function( e ) {
-		throw e;
-	};
+  xhr.onerror = (e) => {
+    throw e;
+  };
 
-	xhr.send( null );
+  xhr.send(null);
+}
+
+export default {
+  readFile,
 };

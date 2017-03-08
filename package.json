@@ -2,7 +2,7 @@
   "name": "nesnes",
   "version": "0.3.1",
   "description": "New EcmaScript NES emulator",
-  "main": "main.js",
+  "module": "index.js",
   "keywords": [
     "nesnes",
     "nes",
@@ -21,8 +21,9 @@
   "author": "Koen Kivits <koen@kivits.com> (http://koen.kivits.com/)",
   "license": "MIT",
   "devDependencies": {
-    "browserify": "^10.2.4",
-    "jshint": "^2.8.0",
-    "dot": "^1.0.3"
+    "dot": "^1.1.1",
+    "eslint": "^3.16.1",
+    "rollup": "^0.41.4",
+    "rollup-plugin-json": "^2.1.0"
   }
 }
